@@ -16,6 +16,12 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": false,
+    "esModuleInterop": true,
+    "declarationMap": true,
+    "useUnknownInCatchVariables": false,
+    "strict": true,
+    "noUnusedLocals": true,
+    "resolveJsonModule": true
   }
 }

@@ -1,0 +1,20 @@
+{
+	"openapi": "3.0.0",
+	"paths": {},
+	"info": {
+		"title": "notifications-service",
+		"description": "",
+		"version": "0.0.1",
+		"contact": {}
+	},
+	"tags": [],
+	"servers": [
+		{
+			"url": "http://localhost:7021",
+			"description": "development"
+		}
+	],
+	"components": {
+		"schemas": {}
+	}
+}

@@ -1,4 +1,7 @@
 import { Module } from '@nestjs/common';
+import { SocketModule } from './socket/socket.module';
 
-@Module({})
+@Module({
+    imports: [SocketModule],
+})
 export class AppModule {}

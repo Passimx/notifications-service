@@ -1,18 +1,29 @@
 import { NestFactory } from '@nestjs/core';
-import { NestFastifyApplication } from '@nestjs/platform-fastify';
+import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+import { WsAdapter } from '@nestjs/platform-ws';
 import { version } from '../package.json';
 import { AppModule } from './modules/app.module';
 import { Envs } from './common/envs/envs';
 import { logger } from './common/logger/logger';
+import { useSwagger } from './common/swagger/swagger';
 
 async function bootstrap() {
-    const app = await NestFactory.create<NestFastifyApplication>(AppModule);
+    const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter(), {
+        bufferLogs: true,
+    });
+
+    if (Envs.swagger.isWriteConfig) useSwagger(app);
+
+    app.useWebSocketAdapter(new WsAdapter(app));
 
     await app.listen(Envs.main.appPort, Envs.main.host);
 
     const url = await app.getUrl();
 
-    logger.info(`Server is running on url: ${url} at ${Date()}. Version: '${version}'.`);
+    logger.info(
+        `Server is running on url: ${url.slice(0, -4)}${Envs.main.socketIoPort} at ${Date()}. Version: '${version}'.`,
+    );
+    logger.info(`Swagger is running on url: ${url}/${Envs.swagger.path} at ${Date()}. Version: '${version}'.`);
 }
 
 bootstrap();

@@ -8,6 +8,7 @@ export const Envs = {
     main: {
         host: process.env.APP_HOST || '0.0.0.0',
         appPort: NumbersUtils.toNumberOrDefault(process.env.APP_PORT, 3000),
+        socketIoPort: NumbersUtils.toNumberOrDefault(process.env.SOCKET_PORT, 3000),
     },
 
     swagger: {
