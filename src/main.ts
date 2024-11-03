@@ -5,7 +5,8 @@ import { version } from '../package.json';
 import { AppModule } from './modules/app.module';
 import { Envs } from './common/envs/envs';
 import { logger } from './common/logger/logger';
-import { useSwagger } from './common/swagger/swagger';
+import { useSwagger } from './common/config/swagger/use-swagger';
+import { useKafka } from './common/config/kafka/use-kafka';
 
 async function bootstrap() {
     const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter(), {
@@ -13,6 +14,7 @@ async function bootstrap() {
     });
 
     if (Envs.swagger.isWriteConfig) useSwagger(app);
+    if (Envs.kafka.kafkaIsConnect) await useKafka(app);
 
     app.useWebSocketAdapter(new WsAdapter(app));
 

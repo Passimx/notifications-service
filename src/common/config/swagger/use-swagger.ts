@@ -1,8 +1,8 @@
 import { writeFileSync } from 'fs';
 import { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import projectInfo from '../../../package.json';
-import { Envs } from '../envs/envs';
+import projectInfo from '../../../../package.json';
+import { Envs } from '../../envs/envs';
 
 export function useSwagger(app: NestFastifyApplication): void {
     const documentBuilder = new DocumentBuilder();
