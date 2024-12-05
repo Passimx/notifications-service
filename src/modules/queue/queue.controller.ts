@@ -6,7 +6,7 @@ import { MessageDto } from './dto/message.dto';
 
 @Controller()
 export class QueueController {
-    @EventPattern('message.dawd')
+    @EventPattern('message')
     @ApiMessageResponseDecorator()
     sendMessage(body: MessageDto) {
         wsServer.to(body.to).emit(body.event, body.data);
