@@ -15,12 +15,10 @@ export class CustomWebSocketClient {
     }
 
     public join(roomName: string): void {
-        this.rooms.add(roomName);
         wsServer.join(this.id, roomName);
     }
 
     public leave(roomName: string): void {
-        this.rooms.delete(roomName);
         wsServer.leave(this.id, roomName);
     }
 

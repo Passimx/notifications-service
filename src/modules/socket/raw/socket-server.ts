@@ -14,34 +14,41 @@ export class WsServer {
         this.selectedClients = selectedClients;
     }
 
-    public leave(clientId: string, roomName: string): boolean {
-        const [client] = Array.from(this.rooms.get(clientId) ?? []);
-        const correctRoom = this.rooms.get(roomName);
+    public leave(clientId: string, ...roomNames: string[]): boolean {
+        const [client]: ClientSocket[] = Array.from(this.rooms.get(clientId) ?? []);
 
-        if (!client || !correctRoom) return false;
+        if (!client) return false;
 
-        correctRoom.delete(client);
+        roomNames.forEach((name) => {
+            client.client.rooms.delete(name);
 
-        if (!correctRoom.size) this.rooms.delete(roomName);
+            const correctRoom = this.rooms.get(name);
+            if (!correctRoom) return;
+
+            correctRoom.delete(client);
+            if (!correctRoom.size) this.rooms.delete(name);
+        });
 
         return true;
     }
 
-    public join(clientId: string, roomName: string): boolean {
-        const [client] = Array.from(this.rooms.get(clientId) ?? []);
+    public join(clientId: string, ...roomNames: string[]): boolean {
+        const [client]: ClientSocket[] = Array.from(this.rooms.get(clientId) ?? []);
 
         if (!client) return false;
 
-        const correctRoom = this.rooms.get(roomName);
+        roomNames.forEach((name) => {
+            client.client.rooms.add(name);
+            const correctRoom = this.rooms.get(name);
 
-        if (!correctRoom) {
-            const newRoom = new Set<ClientSocket>();
-            newRoom.add(client);
-            this.rooms.set(roomName, newRoom);
-        } else {
-            correctRoom.add(client);
-            this.rooms.set(roomName, correctRoom);
-        }
+            if (!correctRoom) {
+                const newRoom = new Set<ClientSocket>();
+                newRoom.add(client);
+                this.rooms.set(name, newRoom);
+            } else {
+                correctRoom.add(client);
+            }
+        });
 
         return true;
     }
@@ -117,6 +124,7 @@ export class WsServer {
     public deleteConnection(client: ClientSocket): boolean {
         if (!client.id) return false;
 
+        client.client.leaveAll();
         return this.rooms.delete(client.id);
     }
 

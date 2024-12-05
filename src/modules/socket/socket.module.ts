@@ -4,6 +4,6 @@ import { SocketGateway } from './socket.gateway';
 
 @Module({
     providers: [SocketGateway],
-    controllers: Envs.swagger.isWriteConfig ? [SocketGateway] : [],
+    controllers: Envs.swagger.isWriteConfig ? [] : [],
 })
 export class SocketModule {}

@@ -5,6 +5,7 @@ import { Envs } from '../../common/envs/envs';
 import { ApiController } from '../../common/decorators/api-controller.decorator';
 import { ClientSocket, CustomWebSocketClient } from './types/client-socket.type';
 import wsServer from './raw/socket-server';
+import { EventsEnum } from './types/event.enum';
 
 @ApiController()
 @WebSocketGateway(Envs.main.socketIoPort)
@@ -13,10 +14,13 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
         socket.client = new CustomWebSocketClient(request);
         socket.id = socket.client.id;
         wsServer.addConnection(socket);
+        wsServer.to(socket.id).emit(EventsEnum.GET_SOCKET_ID, socket.id);
+
+        wsServer.join(socket.id, 'connections');
     }
 
     handleDisconnect(@ConnectedSocket() socket: ClientSocket): void {
-        socket.close();
         wsServer.deleteConnection(socket);
+        socket.close();
     }
 }

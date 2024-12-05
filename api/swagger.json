@@ -1,6 +1,51 @@
 {
 	"openapi": "3.0.0",
-	"paths": {},
+	"paths": {
+		"/message": {
+			"get": {
+				"description": "событие message",
+				"operationId": "QueueController_sendMessage",
+				"parameters": [],
+				"responses": {
+					"200": {
+						"schema": {
+							"properties": {
+								"event": {
+									"type": "string",
+									"description": "название метода",
+									"example": "message"
+								},
+								"data": {
+									"$ref": "#/components/schemas/MessageDto"
+								}
+							}
+						},
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"event": {
+											"type": "string",
+											"description": "название метода",
+											"example": "message"
+										},
+										"data": {
+											"$ref": "#/components/schemas/MessageDto"
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"summary": "",
+				"tags": [
+					"Queue"
+				]
+			}
+		}
+	},
 	"info": {
 		"title": "notifications-service",
 		"description": "",
@@ -15,6 +60,46 @@
 		}
 	],
 	"components": {
-		"schemas": {}
+		"schemas": {
+			"DataResponse": {
+				"type": "object",
+				"properties": {
+					"success": {
+						"type": "boolean"
+					},
+					"data": {
+						"type": "object"
+					}
+				},
+				"required": [
+					"success",
+					"data"
+				]
+			},
+			"MessageDto": {
+				"type": "object",
+				"properties": {
+					"to": {
+						"type": "string"
+					},
+					"event": {
+						"type": "string",
+						"enum": [
+							"get_socket_id",
+							"create_chat",
+							"create_message"
+						]
+					},
+					"data": {
+						"$ref": "#/components/schemas/DataResponse"
+					}
+				},
+				"required": [
+					"to",
+					"event",
+					"data"
+				]
+			}
+		}
 	}
 }
