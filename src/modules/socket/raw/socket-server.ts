@@ -100,15 +100,17 @@ export class WsServer {
         return new WsServer(rooms, selectedClients);
     }
 
-    public emit(event: string, data: object | string): void {
-        if (this.selectedClients.size) {
-            this.selectedClients.forEach((client) => client.send(JSON.stringify({ event, data })));
-        } else {
-            const clientsRoom = new Set<ClientSocket>();
-            this.rooms.forEach((room) => room.forEach((client) => clientsRoom.add(client)));
+    public emitAll(event: string, data: object | string) {
+        const clientsRoom = new Set<ClientSocket>();
+        this.rooms.forEach((room) => room.forEach((client) => clientsRoom.add(client)));
 
-            clientsRoom.forEach((client) => client.send(JSON.stringify({ event, data })));
-        }
+        clientsRoom.forEach((client) => client.send(JSON.stringify({ event, data })));
+    }
+
+    public emit(event: string, data: object | string): void {
+        if (!this.selectedClients.size) return;
+
+        this.selectedClients.forEach((client) => client.send(JSON.stringify({ event, data })));
     }
 
     public addConnection(client: ClientSocket): boolean {
