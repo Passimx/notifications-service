@@ -21,6 +21,7 @@ export async function useKafka(app: NestFastifyApplication) {
                 },
             },
         });
+
         await app.startAllMicroservices();
     }
 }
