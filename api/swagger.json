@@ -4,7 +4,7 @@
 		"/message": {
 			"get": {
 				"description": "событие message",
-				"operationId": "QueueController_sendMessage",
+				"operationId": "QueueController_emit",
 				"parameters": [],
 				"responses": {
 					"200": {
@@ -55,7 +55,7 @@
 	"tags": [],
 	"servers": [
 		{
-			"url": "http://localhost:7021",
+			"url": "http://localhost:7025",
 			"description": "development"
 		}
 	],
@@ -87,7 +87,8 @@
 						"enum": [
 							"get_socket_id",
 							"create_chat",
-							"create_message"
+							"create_message",
+							"join_chat"
 						]
 					},
 					"data": {
