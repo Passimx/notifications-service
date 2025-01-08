@@ -13,8 +13,16 @@ export class QueueController {
     }
 
     @EventPattern('join')
-    join(body: MessageDto<number[]>) {
+    join(body: MessageDto<string[]>) {
         const { data } = body.data;
-        wsServer.join(body.to, ...data.map((num) => num.toString()));
+
+        wsServer.join(body.to, ...data);
+    }
+
+    @EventPattern('leave')
+    leave(body: MessageDto<string[]>) {
+        const { data } = body.data;
+
+        wsServer.leave(body.to, ...data);
     }
 }
