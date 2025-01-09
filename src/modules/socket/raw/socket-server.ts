@@ -27,6 +27,7 @@ export class WsServer {
 
             correctRoom.delete(client);
             if (!correctRoom.size) this.rooms.delete(name);
+            this.online(name);
         });
 
         return true;
@@ -34,7 +35,6 @@ export class WsServer {
 
     public join(clientId: string, ...roomNames: string[]): boolean {
         const [client]: ClientSocket[] = Array.from(this.rooms.get(clientId) ?? []);
-
         if (!client) return false;
 
         roomNames.forEach((name) => {
@@ -48,9 +48,15 @@ export class WsServer {
             } else {
                 correctRoom.add(client);
             }
+            this.online(name);
         });
 
         return true;
+    }
+
+    public online(roomName: string): void {
+        const onlineUsers = this.rooms.get(roomName)?.size || 0;
+        this.to(roomName).emit('OnlineUsersCount', { onlineUsers });
     }
 
     public to(roomName: string): WsServer {
@@ -58,7 +64,6 @@ export class WsServer {
         const selectedClients = new Set<ClientSocket>(this.selectedClients);
 
         if (room) room.forEach((client) => selectedClients.add(client));
-
         const rooms = new Map<string, Set<ClientSocket>>(this.rooms);
 
         return new WsServer(rooms, selectedClients);
