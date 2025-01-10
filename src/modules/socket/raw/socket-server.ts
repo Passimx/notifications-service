@@ -17,6 +17,8 @@ export class WsServer {
     public leave(clientId: string, ...roomNames: string[]): boolean {
         const [client]: ClientSocket[] = Array.from(this.rooms.get(clientId) ?? []);
 
+        const room: string[] = [];
+
         if (!client) return false;
 
         roomNames.forEach((name) => {
@@ -27,7 +29,24 @@ export class WsServer {
 
             correctRoom.delete(client);
             if (!correctRoom.size) this.rooms.delete(name);
-            this.online(name);
+            room.push(name);
+        });
+
+        room.forEach((roomNames) => {
+            const onlineUsers = this.rooms.get(roomNames)?.size || 0;
+            let roundNumbers: number;
+            if (onlineUsers < 1000) {
+                roundNumbers = onlineUsers;
+            } else if (onlineUsers < 1000000) {
+                roundNumbers = onlineUsers / 1000;
+            } else {
+                roundNumbers = onlineUsers / 1000000;
+            }
+            this.to(clientId).emit('OnlineUsersCountThisClient', { roundNumbers });
+        });
+
+        room.forEach((roomName) => {
+            this.online(roomName, clientId);
         });
 
         return true;
@@ -36,6 +55,8 @@ export class WsServer {
     public join(clientId: string, ...roomNames: string[]): boolean {
         const [client]: ClientSocket[] = Array.from(this.rooms.get(clientId) ?? []);
         if (!client) return false;
+
+        const room: string[] = [];
 
         roomNames.forEach((name) => {
             client.client.rooms.add(name);
@@ -48,15 +69,42 @@ export class WsServer {
             } else {
                 correctRoom.add(client);
             }
-            this.online(name);
+
+            room.push(name);
+        });
+
+        room.forEach((roomNames) => {
+            const onlineUsers = this.rooms.get(roomNames)?.size || 0;
+            let roundNumbers: number;
+            if (onlineUsers < 1000) {
+                roundNumbers = onlineUsers;
+            } else if (onlineUsers < 1000000) {
+                roundNumbers = onlineUsers / 1000;
+            } else {
+                roundNumbers = onlineUsers / 1000000;
+            }
+            this.to(clientId).emit('OnlineUsersCountThisClient', { roundNumbers });
+        });
+
+        room.forEach((roomName) => {
+            this.online(roomName, clientId);
         });
 
         return true;
     }
 
-    public online(roomName: string): void {
+    public online(roomName: string, clientId: string): void {
         const onlineUsers = this.rooms.get(roomName)?.size || 0;
-        this.to(roomName).emit('OnlineUsersCount', { onlineUsers });
+
+        let roundNumbers: number;
+        if (onlineUsers < 1000) {
+            roundNumbers = onlineUsers;
+        } else if (onlineUsers < 1000000) {
+            roundNumbers = onlineUsers / 1000;
+        } else {
+            roundNumbers = onlineUsers / 1000000;
+        }
+        this.to(roomName).except(clientId).emit('OnlineUsersCount', { roundNumbers });
     }
 
     public to(roomName: string): WsServer {
