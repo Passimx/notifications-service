@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { ClientSocket } from '../types/client-socket.type';
+import { DataResponse } from '../../queue/dto/data-response.dto';
+import { chatOnline } from '../types/chat-online.type';
+import { EventsEnum } from '../types/event.enum';
 
 @Injectable()
 export class WsServer {
@@ -17,8 +20,7 @@ export class WsServer {
     public leave(clientId: string, ...roomNames: string[]): boolean {
         const [client]: ClientSocket[] = Array.from(this.rooms.get(clientId) ?? []);
 
-        const room: string[] = [];
-
+        const rooms: chatOnline[] = [];
         if (!client) return false;
 
         roomNames.forEach((name) => {
@@ -28,25 +30,17 @@ export class WsServer {
             if (!correctRoom) return;
 
             correctRoom.delete(client);
-            if (!correctRoom.size) this.rooms.delete(name);
-            room.push(name);
+            if (!correctRoom.size) return this.rooms.delete(name);
+
+            const onlineUsers = this.rooms.get(name).size;
+            const roundNumbers = this.getNumbersString(onlineUsers);
+
+            rooms.push({ name: name, onlineUsers: roundNumbers });
         });
 
-        room.forEach((roomNames) => {
-            const onlineUsers = this.rooms.get(roomNames)?.size || 0;
-            let roundNumbers: number;
-            if (onlineUsers < 1000) {
-                roundNumbers = onlineUsers;
-            } else if (onlineUsers < 1000000) {
-                roundNumbers = onlineUsers / 1000;
-            } else {
-                roundNumbers = onlineUsers / 1000000;
-            }
-            this.to(clientId).emit('OnlineUsersCountThisClient', { roundNumbers });
-        });
-
-        room.forEach((roomName) => {
-            this.online(roomName, clientId);
+        rooms.forEach(({ name, onlineUsers }) => {
+            const countUsersBefore = this.getNumbersString(this.rooms.get(name).size + 1);
+            if (onlineUsers !== countUsersBefore) this.online({ name, onlineUsers });
         });
 
         return true;
@@ -56,7 +50,7 @@ export class WsServer {
         const [client]: ClientSocket[] = Array.from(this.rooms.get(clientId) ?? []);
         if (!client) return false;
 
-        const room: string[] = [];
+        const rooms: chatOnline[] = [];
 
         roomNames.forEach((name) => {
             client.client.rooms.add(name);
@@ -69,42 +63,36 @@ export class WsServer {
             } else {
                 correctRoom.add(client);
             }
+            const onlineUsers = this.rooms.get(name).size;
+            const roundNumbers = this.getNumbersString(onlineUsers);
 
-            room.push(name);
+            rooms.push({ name, onlineUsers: roundNumbers });
         });
 
-        room.forEach((roomNames) => {
-            const onlineUsers = this.rooms.get(roomNames)?.size || 0;
-            let roundNumbers: number;
-            if (onlineUsers < 1000) {
-                roundNumbers = onlineUsers;
-            } else if (onlineUsers < 1000000) {
-                roundNumbers = onlineUsers / 1000;
-            } else {
-                roundNumbers = onlineUsers / 1000000;
-            }
-            this.to(clientId).emit('OnlineUsersCountThisClient', { roundNumbers });
-        });
+        this.to(clientId).emit(EventsEnum.CHAT_COUNT_ONLINE, new DataResponse<chatOnline[]>(rooms));
 
-        room.forEach((roomName) => {
-            this.online(roomName, clientId);
+        rooms.forEach(({ name, onlineUsers }) => {
+            const countUsersBefore = this.getNumbersString(this.rooms.get(name).size - 1);
+            if (onlineUsers !== countUsersBefore) this.online({ name, onlineUsers }, clientId);
         });
 
         return true;
     }
 
-    public online(roomName: string, clientId: string): void {
-        const onlineUsers = this.rooms.get(roomName)?.size || 0;
-
-        let roundNumbers: number;
-        if (onlineUsers < 1000) {
-            roundNumbers = onlineUsers;
-        } else if (onlineUsers < 1000000) {
-            roundNumbers = onlineUsers / 1000;
+    private getNumbersString(number: number): string {
+        if (number < 1000) {
+            return number.toString();
+        } else if (number < 1000000) {
+            return (number / 1000).toString() + 'К';
         } else {
-            roundNumbers = onlineUsers / 1000000;
+            return (number / 1000000).toString() + 'M';
         }
-        this.to(roomName).except(clientId).emit('OnlineUsersCount', { roundNumbers });
+    }
+
+    public online(room: chatOnline, clientId?: string): void {
+        this.to(room.name)
+            .except(clientId)
+            .emit(EventsEnum.CHAT_COUNT_ONLINE, new DataResponse<chatOnline[]>([room]));
     }
 
     public to(roomName: string): WsServer {
