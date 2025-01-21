@@ -16,9 +16,7 @@ export async function useKafka(app: NestFastifyApplication) {
                         mechanism: 'plain',
                     },
                 },
-                consumer: {
-                    groupId: 'chat-service',
-                },
+                producerOnlyMode: true,
             },
         });
 

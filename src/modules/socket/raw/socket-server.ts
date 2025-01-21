@@ -4,10 +4,14 @@ import { DataResponse } from '../../queue/dto/data-response.dto';
 import { chatOnline } from '../types/chat-online.type';
 import { EventsEnum } from '../types/event.enum';
 
+import { QueueService } from '../../queue/queue.service';
+import { TopicsEnum } from '../../queue/type/topics.enum';
+
 @Injectable()
 export class WsServer {
     public readonly rooms: Map<string, Set<ClientSocket>>;
     private readonly selectedClients: Set<ClientSocket>;
+    private queueService: QueueService;
 
     constructor(
         rooms: Map<string, Set<ClientSocket>> = new Map<string, Set<ClientSocket>>(),
@@ -15,6 +19,10 @@ export class WsServer {
     ) {
         this.rooms = rooms;
         this.selectedClients = selectedClients;
+    }
+
+    public setQueueService(queueService: QueueService) {
+        this.queueService = queueService;
     }
 
     public leave(clientId: string, ...roomNames: string[]): boolean {
@@ -75,6 +83,11 @@ export class WsServer {
             const countUsersBefore = this.getNumbersString(this.rooms.get(name).size - 1);
             if (onlineUsers !== countUsersBefore) this.online({ name, onlineUsers }, clientId);
         });
+
+        const response = new DataResponse<chatOnline[]>(rooms);
+        if (this.queueService) {
+            this.queueService.sendMessage(TopicsEnum.ONLINE, 'string', EventsEnum.CHAT_COUNT_ONLINE, response);
+        }
 
         return true;
     }

@@ -18,4 +18,10 @@ export class MessageDto<T = unknown> {
     @ApiProperty({ type: DataResponse })
     @IsObject()
     readonly data: DataResponse<T>;
+
+    constructor(to: string, event: EventsEnum, data: DataResponse<T>) {
+        this.to = to;
+        this.event = event;
+        this.data = data;
+    }
 }
