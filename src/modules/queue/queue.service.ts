@@ -2,11 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Kafka, Producer } from 'kafkajs';
 import { ClientKafka } from '@nestjs/microservices';
 
-import { EventsEnum } from '../socket/types/event.enum';
-
 import { Envs } from '../../common/envs/envs';
 import wsServer from '../socket/raw/socket-server';
-import { MessageDto } from './dto/message.dto';
 
 import { InjectEnum } from './type/inject.enum';
 import { TopicsEnum } from './type/topics.enum';
@@ -29,15 +26,8 @@ export class QueueService {
         this.producer.connect().then(() => (this.isConnected = true));
     }
 
-    public sendMessage(
-        topic: TopicsEnum,
-        to: string | undefined,
-        event: EventsEnum,
-        data: DataResponse<unknown>,
-    ): void {
-        if (!Envs.kafka.kafkaIsConnect || !this.isConnected || !to) return;
-
-        const message = new MessageDto(to, event, data);
+    public sendMessage(topic: TopicsEnum, message: DataResponse<unknown>): void {
+        if (!Envs.kafka.kafkaIsConnect || !this.isConnected) return;
 
         this.producer.send({ topic, messages: [{ value: JSON.stringify(message) }] });
     }

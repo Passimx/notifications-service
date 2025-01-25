@@ -19,8 +19,7 @@ export class MessageDto<T = unknown> {
     @IsObject()
     readonly data: DataResponse<T>;
 
-    constructor(to: string, event: EventsEnum, data: DataResponse<T>) {
-        this.to = to;
+    constructor(event: EventsEnum, data: DataResponse<T>) {
         this.event = event;
         this.data = data;
     }

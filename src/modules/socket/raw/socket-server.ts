@@ -12,6 +12,7 @@ export class WsServer {
     public readonly rooms: Map<string, Set<ClientSocket>>;
     private readonly selectedClients: Set<ClientSocket>;
     private queueService: QueueService;
+    private readonly maxUsersOnline: Map<string, number>;
 
     constructor(
         rooms: Map<string, Set<ClientSocket>> = new Map<string, Set<ClientSocket>>(),
@@ -19,6 +20,7 @@ export class WsServer {
     ) {
         this.rooms = rooms;
         this.selectedClients = selectedClients;
+        this.maxUsersOnline = new Map<string, number>();
     }
 
     public setQueueService(queueService: QueueService) {
@@ -68,13 +70,19 @@ export class WsServer {
                 const newRoom = new Set<ClientSocket>();
                 newRoom.add(client);
                 this.rooms.set(name, newRoom);
+                this.maxUsersOnline.set(name, 0);
             } else {
                 correctRoom.add(client);
             }
             const onlineUsers = this.rooms.get(name).size;
             const roundNumbers = this.getNumbersString(onlineUsers);
-
             rooms.push({ name, onlineUsers: roundNumbers });
+
+            const updateMaxUsersOnline = this.maxUsersOnline.get(name) || 0;
+            if (onlineUsers > updateMaxUsersOnline) {
+                this.maxUsersOnline.set(name, onlineUsers);
+                this.sendMaxUsersToKafka(name, onlineUsers);
+            }
         });
 
         this.to(clientId).emit(EventsEnum.CHAT_COUNT_ONLINE, new DataResponse<chatOnline[]>(rooms));
@@ -84,12 +92,13 @@ export class WsServer {
             if (onlineUsers !== countUsersBefore) this.online({ name, onlineUsers }, clientId);
         });
 
-        const response = new DataResponse<chatOnline[]>(rooms);
-        if (this.queueService) {
-            this.queueService.sendMessage(TopicsEnum.ONLINE, 'string', EventsEnum.CHAT_COUNT_ONLINE, response);
-        }
-
         return true;
+    }
+
+    private sendMaxUsersToKafka(roomName: string, onlineUsers: number) {
+        const massage = { roomName, onlineUsers };
+        const response = new DataResponse(massage);
+        this.queueService.sendMessage(TopicsEnum.ONLINE, response);
     }
 
     private getNumbersString(number: number): string {
