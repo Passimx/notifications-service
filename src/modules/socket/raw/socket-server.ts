@@ -4,10 +4,15 @@ import { DataResponse } from '../../queue/dto/data-response.dto';
 import { chatOnline } from '../types/chat-online.type';
 import { EventsEnum } from '../types/event.enum';
 
+import { QueueService } from '../../queue/queue.service';
+import { TopicsEnum } from '../../queue/type/topics.enum';
+
 @Injectable()
 export class WsServer {
     public readonly rooms: Map<string, Set<ClientSocket>>;
     private readonly selectedClients: Set<ClientSocket>;
+    private queueService: QueueService;
+    private readonly maxUsersOnline: Map<string, number>;
 
     constructor(
         rooms: Map<string, Set<ClientSocket>> = new Map<string, Set<ClientSocket>>(),
@@ -15,6 +20,11 @@ export class WsServer {
     ) {
         this.rooms = rooms;
         this.selectedClients = selectedClients;
+        this.maxUsersOnline = new Map<string, number>();
+    }
+
+    public setQueueService(queueService: QueueService) {
+        this.queueService = queueService;
     }
 
     public leave(clientId: string, ...roomNames: string[]): boolean {
@@ -60,13 +70,19 @@ export class WsServer {
                 const newRoom = new Set<ClientSocket>();
                 newRoom.add(client);
                 this.rooms.set(name, newRoom);
+                this.maxUsersOnline.set(name, 0);
             } else {
                 correctRoom.add(client);
             }
             const onlineUsers = this.rooms.get(name).size;
             const roundNumbers = this.getNumbersString(onlineUsers);
-
             rooms.push({ name, onlineUsers: roundNumbers });
+
+            const updateMaxUsersOnline = this.maxUsersOnline.get(name) || 0;
+            if (onlineUsers > updateMaxUsersOnline) {
+                this.maxUsersOnline.set(name, onlineUsers);
+                this.sendMaxUsersToKafka(name, onlineUsers);
+            }
         });
 
         this.to(clientId).emit(EventsEnum.CHAT_COUNT_ONLINE, new DataResponse<chatOnline[]>(rooms));
@@ -77,6 +93,12 @@ export class WsServer {
         });
 
         return true;
+    }
+
+    private sendMaxUsersToKafka(roomName: string, onlineUsers: number) {
+        const massage = { roomName, onlineUsers };
+        const response = new DataResponse(massage);
+        this.queueService.sendMessage(TopicsEnum.ONLINE, response);
     }
 
     private getNumbersString(number: number): string {
