@@ -55,7 +55,7 @@
 	"tags": [],
 	"servers": [
 		{
-			"url": "http://localhost:7025",
+			"url": "http://localhost:7021",
 			"description": "development"
 		}
 	],
@@ -88,7 +88,8 @@
 							"get_socket_id",
 							"create_chat",
 							"create_message",
-							"join_chat"
+							"join_chat",
+							"chat_count_online"
 						]
 					},
 					"data": {
