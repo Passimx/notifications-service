@@ -15,5 +15,5 @@ jobs:
           docker build . -t titproger/notification_service:latest
       - name: push image to docker hub
         run: |
-          echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u titproger --password-stdin
+          docker login -u titproger -p ${{secrets.DOCKER_HUB_TOKEN}}
            docker push titproger/notification_service:latest
