@@ -1,0 +1,9 @@
+version: '3.8'
+services:
+  nodejs:
+    image: titproger/notification_service:latest
+    container_name: notification_service
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - ${APP_PORT}:${APP_PORT}
