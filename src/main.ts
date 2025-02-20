@@ -16,6 +16,12 @@ async function bootstrap() {
     if (Envs.swagger.isWriteConfig) useSwagger(app);
     if (Envs.kafka.kafkaIsConnect) await useKafka(app);
 
+    app.enableCors({
+        origin: ['https://tons-chat.ru', 'http://localhost:3006'], // Разрешаем запросы только с этого домена
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+        credentials: true, // Разрешаем использование кук и токенов
+    });
+
     app.useWebSocketAdapter(new WsAdapter(app));
 
     await app.listen(Envs.main.appPort, Envs.main.host);
