@@ -8,7 +8,13 @@ import wsServer from './raw/socket-server';
 import { EventsEnum } from './types/event.enum';
 
 @ApiController()
-@WebSocketGateway(Envs.main.socketIoPort)
+@WebSocketGateway(Envs.main.socketIoPort, {
+    cors: {
+        origin: ['https://tons-chat.ru', 'http://localhost:3006'], // Разрешаем запросы только с этих доменов
+        methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
+        credentials: true, // Разрешаем использование кук и токенов
+    },
+})
 export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     handleConnection(@ConnectedSocket() socket: ClientSocket, @Req() request: FastifyRequest): void {
         socket.client = new CustomWebSocketClient(request);
