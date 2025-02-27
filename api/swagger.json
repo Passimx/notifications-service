@@ -55,7 +55,7 @@
 	"tags": [],
 	"servers": [
 		{
-			"url": "http://localhost:7025",
+			"url": "http://localhost:3000",
 			"description": "development"
 		}
 	],
