@@ -15,7 +15,6 @@ export class QueueController {
     @EventPattern('join')
     join(body: MessageDto<string[]>) {
         const { data } = body.data;
-
         wsServer.join(body.to, ...data);
     }
 

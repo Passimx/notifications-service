@@ -16,7 +16,9 @@ export async function useKafka(app: NestFastifyApplication) {
                         mechanism: 'plain',
                     },
                 },
-                producerOnlyMode: true,
+                consumer: {
+                    groupId: 'tit-notification-service',
+                },
             },
         });
 
