@@ -1,19 +1,34 @@
-name: Build and Publish image to DockerHub
+name: CI/CD Pipeline
+
 on:
   push:
     branches:
       - main
 
 jobs:
-  publish_images:
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout
-        uses: actions/checkout@v3
-      - name: build image
-        run: |
-          docker build . -t titproger/notification_service:latest
-      - name: push image to docker hub
-        run: |
-          docker login -u titproger -p ${{secrets.DOCKER_HUB_TOKEN}}
-           docker push titproger/notification_service:latest
+  build:
+    uses: Passimx/ci-cd-workflows/.github/workflows/build.yml@main
+    with:
+      ORGANIZATION_NAME: ${{ vars.ORGANIZATION_NAME }}
+      IMAGE_NAME: ${{ vars.IMAGE_NAME }}
+    secrets:
+      DOCKER_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+  release:
+    needs: build
+    uses: Passimx/ci-cd-workflows/.github/workflows/release.yml@main
+    with:
+      ORGANIZATION_NAME: ${{ vars.ORGANIZATION_NAME }}
+      IMAGE_NAME: ${{ vars.IMAGE_NAME }}
+    secrets:
+      DOCKER_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+  deploy:
+    needs: release
+    uses: Passimx/ci-cd-workflows/.github/workflows/deploy.yml@main
+    with:
+      SSH_USER: "ubuntu"
+      SSH_HOST: "your-server-ip"
+      DEPLOY_SCRIPT: "cd /app && ./deploy.sh"
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
