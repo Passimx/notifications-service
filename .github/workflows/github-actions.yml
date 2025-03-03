@@ -29,5 +29,5 @@ jobs:
     secrets:
       SSH_USER: ${{ secrets.SSH_USER }}
       SSH_HOST: ${{ secrets.SSH_HOST }}
-      DEPLOY_SCRIPT: "/home/tit/pasim/notifications-service-deploy.sh"
+      DEPLOY_SCRIPT: ${{ secrets.DEPLOY_SCRIPT }}
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
