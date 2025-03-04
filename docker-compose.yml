@@ -26,7 +26,6 @@ services:
     ports:
       - ${APP_PORT}:${APP_PORT}
 
-
   postgres:
     image: postgres:17-alpine
     container_name: passimx-postgres
