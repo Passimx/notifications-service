@@ -3,15 +3,16 @@ import { ClientSocket } from '../types/client-socket.type';
 import { DataResponse } from '../../queue/dto/data-response.dto';
 import { chatOnline } from '../types/chat-online.type';
 import { EventsEnum } from '../types/event.enum';
-
 import { QueueService } from '../../queue/queue.service';
 import { TopicsEnum } from '../../queue/type/topics.enum';
+import { CacheService } from '../../caching/caching.service';
 
 @Injectable()
 export class WsServer {
     public readonly rooms: Map<string, Set<ClientSocket>>;
     private readonly selectedClients: Set<ClientSocket>;
     private queueService: QueueService;
+    private cacheService: CacheService;
     private readonly maxUsersOnline: Map<string, number>;
 
     constructor(
@@ -26,6 +27,29 @@ export class WsServer {
     public setQueueService(queueService: QueueService) {
         this.queueService = queueService;
     }
+
+    public setCacheService(cacheService: CacheService) {
+        this.cacheService = cacheService;
+    }
+
+    // public async checkCacheData(roomName: string): Promise<void> {
+    //     if (this.cacheService) {
+    //         if (typeof this.cacheService.getCachedValue === 'function') {
+    //             try {
+    //                 const maxUsersOnline = await this.cacheService.getCachedValue(`maxUsersOnline:${roomName}`);
+    //                 console.log(
+    //                     `Максимальное количество пользователей онлайн в комнате ${roomName}: ${maxUsersOnline}`,
+    //                 );
+    //             } catch (err) {
+    //                 console.error('Ошибка при получении данных из кеша:', err);
+    //             }
+    //         } else {
+    //             console.error('Метод getCachedValue не существует в CacheService');
+    //         }
+    //     } else {
+    //         console.error('CacheService не инициализирован');
+    //     }
+    // }
 
     public leave(clientId: string, ...roomNames: string[]): boolean {
         const [client]: ClientSocket[] = Array.from(this.rooms.get(clientId) ?? []);
@@ -56,13 +80,12 @@ export class WsServer {
         return true;
     }
 
-    public join(clientId: string, ...roomNames: string[]): boolean {
+    public async join(clientId: string, ...roomNames: string[]): Promise<boolean> {
         const [client]: ClientSocket[] = Array.from(this.rooms.get(clientId) ?? []);
         if (!client) return false;
 
         const rooms: chatOnline[] = [];
-
-        roomNames.forEach((name) => {
+        for (const name of roomNames) {
             client.client.rooms.add(name);
             const correctRoom = this.rooms.get(name);
 
@@ -82,9 +105,15 @@ export class WsServer {
             if (onlineUsers > updateMaxUsersOnline) {
                 this.maxUsersOnline.set(name, onlineUsers);
                 this.sendMaxUsersToKafka(name, onlineUsers);
+                // Проверка на инициализацию cacheService
+                if (this.cacheService) {
+                    await this.cacheService.updateMaxUsersOnline(name, onlineUsers); // Теперь await здесь
+                    // await this.checkCacheData(name); // И здесь
+                } else {
+                    // console.error('CacheService не инициализирован');
+                }
             }
-        });
-
+        }
         this.to(clientId).emit(EventsEnum.CHAT_COUNT_ONLINE, new DataResponse<chatOnline[]>(rooms));
 
         rooms.forEach(({ name, onlineUsers }) => {
