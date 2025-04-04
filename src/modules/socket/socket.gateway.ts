@@ -1,4 +1,10 @@
-import { ConnectedSocket, OnGatewayConnection, OnGatewayDisconnect, WebSocketGateway } from '@nestjs/websockets';
+import {
+    ConnectedSocket,
+    OnGatewayConnection,
+    OnGatewayDisconnect,
+    SubscribeMessage,
+    WebSocketGateway,
+} from '@nestjs/websockets';
 import { FastifyRequest } from 'fastify';
 import { Req } from '@nestjs/common';
 import { Envs } from '../../common/envs/envs';
@@ -26,5 +32,10 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     handleDisconnect(@ConnectedSocket() socket: ClientSocket): void {
         wsServer.deleteConnection(socket);
         socket.close();
+    }
+
+    @SubscribeMessage('ping')
+    ping(@ConnectedSocket() socket: ClientSocket) {
+        socket.send(JSON.stringify({ event: 'pong' }));
     }
 }
