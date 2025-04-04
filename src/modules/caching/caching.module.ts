@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { Redis } from 'ioredis';
+import { Envs } from '../../common/envs/envs';
 import { CacheService } from './caching.service';
 
 @Module({
@@ -8,8 +9,8 @@ import { CacheService } from './caching.service';
             provide: 'REDIS',
             useFactory: () => {
                 return new Redis({
-                    host: 'localhost', // Замените на ваш хост
-                    port: 6379, // Замените на ваш порт
+                    host: Envs.redis.host,
+                    port: Number(Envs.redis.port),
                 });
             },
         },
@@ -17,4 +18,4 @@ import { CacheService } from './caching.service';
     ],
     exports: [CacheService],
 })
-export class CacheRedisModule {}
+export class CacheModule {}

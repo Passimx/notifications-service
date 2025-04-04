@@ -28,7 +28,7 @@ export class CacheService {
     // Метод для проверки наличия ключа в кеше
     async has(key: string): Promise<boolean> {
         const value = await this.redis.get(key);
-        return value !== null;
+        return !!value;
     }
 
     public async updateMaxUsersOnline(roomName: string, onlineUsers: number): Promise<void> {
@@ -42,18 +42,5 @@ export class CacheService {
     // Метод для получения максимального количества пользователей онлайн
     async getMaxUsersOnline(roomName: string): Promise<number> {
         return (await this.get<number>(`maxUsersOnline:${roomName}`)) || 0;
-    }
-
-    public async getCachedValue(key: string): Promise<any> {
-        return await this.get(key);
-    }
-
-    async clearRoomCache(roomName: string): Promise<number> {
-        const pattern = `*:${roomName}`;
-        const keys = await this.redis.keys(pattern);
-        if (keys.length) {
-            return await this.redis.del(...keys);
-        }
-        return 0;
     }
 }

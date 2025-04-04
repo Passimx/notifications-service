@@ -25,4 +25,9 @@ export const Envs = {
         password: String(process.env.KAFKA_USER_PASSWORD),
         kafkaIsConnect: BooleanUtils.strToBoolWithDefault(process.env.KAFKA_IS_CONNECT, false),
     },
+
+    redis: {
+        host: process.env.Redis_HOST,
+        port: process.env.Redis_PORT,
+    },
 };
