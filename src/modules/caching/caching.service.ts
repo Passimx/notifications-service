@@ -1,40 +1,41 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Redis } from 'ioredis';
 import wsServer from '../socket/raw/socket-server';
 
 @Injectable()
 export class CacheService {
-    constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {
+    constructor(@Inject('REDIS') private redis: Redis) {
         wsServer.setCacheService(this);
     }
 
     // Метод для установки значения в кеш
-    async set(key: string, value: any, ttl?: number): Promise<void> {
-        await this.cacheManager.set(key, value, ttl);
+    async set(key: string, value: number, ttl?: number): Promise<void> {
+        const stringValue = JSON.stringify(value);
+        await this.redis.set(key, stringValue, 'EX', ttl);
     }
 
     // Метод для получения значения из кеша
     async get<T>(key: string): Promise<T | undefined> {
-        return await this.cacheManager.get<T>(key);
+        const data = await this.redis.get(key);
+        return data ? (JSON.parse(data) as T) : undefined;
     }
 
     // Метод для удаления значения из кеша
-    async del(key: string): Promise<void> {
-        await this.cacheManager.del(key);
+    async del(key: string): Promise<number> {
+        return await this.redis.del(key);
     }
 
     // Метод для проверки наличия ключа в кеше
     async has(key: string): Promise<boolean> {
-        const value = await this.cacheManager.get(key);
-        return value !== undefined;
+        const value = await this.redis.get(key);
+        return value !== null;
     }
 
     public async updateMaxUsersOnline(roomName: string, onlineUsers: number): Promise<void> {
         const cachedMaxUsersOnline = (await this.get<number>(`maxUsersOnline:${roomName}`)) || 0;
-        // console.log(`Текущие максимальные пользователи онлайн для ${roomName}: ${cachedMaxUsersOnline}`);
+
         if (onlineUsers > cachedMaxUsersOnline) {
-            await this.set(`maxUsersOnline:${roomName}`, onlineUsers);
-            // console.log(`Обновлено максимальное количество пользователей онлайн для ${roomName}: ${onlineUsers}`);
+            await this.set(`maxUsersOnline:${roomName}`, onlineUsers, 3600);
         }
     }
 
@@ -45,5 +46,14 @@ export class CacheService {
 
     public async getCachedValue(key: string): Promise<any> {
         return await this.get(key);
+    }
+
+    async clearRoomCache(roomName: string): Promise<number> {
+        const pattern = `*:${roomName}`;
+        const keys = await this.redis.keys(pattern);
+        if (keys.length) {
+            return await this.redis.del(...keys);
+        }
+        return 0;
     }
 }

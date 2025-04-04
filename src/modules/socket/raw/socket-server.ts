@@ -32,25 +32,6 @@ export class WsServer {
         this.cacheService = cacheService;
     }
 
-    // public async checkCacheData(roomName: string): Promise<void> {
-    //     if (this.cacheService) {
-    //         if (typeof this.cacheService.getCachedValue === 'function') {
-    //             try {
-    //                 const maxUsersOnline = await this.cacheService.getCachedValue(`maxUsersOnline:${roomName}`);
-    //                 console.log(
-    //                     `Максимальное количество пользователей онлайн в комнате ${roomName}: ${maxUsersOnline}`,
-    //                 );
-    //             } catch (err) {
-    //                 console.error('Ошибка при получении данных из кеша:', err);
-    //             }
-    //         } else {
-    //             console.error('Метод getCachedValue не существует в CacheService');
-    //         }
-    //     } else {
-    //         console.error('CacheService не инициализирован');
-    //     }
-    // }
-
     public leave(clientId: string, ...roomNames: string[]): boolean {
         const [client]: ClientSocket[] = Array.from(this.rooms.get(clientId) ?? []);
 
@@ -93,7 +74,8 @@ export class WsServer {
                 const newRoom = new Set<ClientSocket>();
                 newRoom.add(client);
                 this.rooms.set(name, newRoom);
-                this.maxUsersOnline.set(name, 0);
+                const redisMaxUsersOnline = await this.cacheService.getMaxUsersOnline(name);
+                this.maxUsersOnline.set(name, redisMaxUsersOnline);
             } else {
                 correctRoom.add(client);
             }
@@ -101,17 +83,11 @@ export class WsServer {
             const roundNumbers = this.getNumbersString(onlineUsers);
             rooms.push({ name, onlineUsers: roundNumbers });
 
-            const updateMaxUsersOnline = this.maxUsersOnline.get(name) || 0;
-            if (onlineUsers > updateMaxUsersOnline) {
+            const localMaxUsers = this.maxUsersOnline.get(name) || 0;
+            if (onlineUsers > localMaxUsers) {
+                await this.cacheService.updateMaxUsersOnline(name, onlineUsers);
                 this.maxUsersOnline.set(name, onlineUsers);
                 this.sendMaxUsersToKafka(name, onlineUsers);
-                // Проверка на инициализацию cacheService
-                if (this.cacheService) {
-                    await this.cacheService.updateMaxUsersOnline(name, onlineUsers); // Теперь await здесь
-                    // await this.checkCacheData(name); // И здесь
-                } else {
-                    // console.error('CacheService не инициализирован');
-                }
             }
         }
         this.to(clientId).emit(EventsEnum.CHAT_COUNT_ONLINE, new DataResponse<chatOnline[]>(rooms));

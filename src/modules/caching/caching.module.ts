@@ -1,18 +1,20 @@
-import { Global, Module } from '@nestjs/common';
-import { CacheModule } from '@nestjs/cache-manager';
-import * as redisStore from 'cache-manager-redis-store';
+import { Module } from '@nestjs/common';
+import { Redis } from 'ioredis';
 import { CacheService } from './caching.service';
 
-@Global()
 @Module({
-    imports: [
-        CacheModule.register({
-            store: redisStore,
-            url: 'redis://passimx-redis:6379',
-            ttl: 60,
-        }),
+    providers: [
+        {
+            provide: 'REDIS',
+            useFactory: () => {
+                return new Redis({
+                    host: 'localhost', // Замените на ваш хост
+                    port: 6379, // Замените на ваш порт
+                });
+            },
+        },
+        CacheService,
     ],
     exports: [CacheService],
-    providers: [CacheService],
 })
 export class CacheRedisModule {}
