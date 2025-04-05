@@ -35,7 +35,7 @@ export class CacheService {
         const cachedMaxUsersOnline = (await this.get<number>(`maxUsersOnline:${roomName}`)) || 0;
 
         if (onlineUsers > cachedMaxUsersOnline) {
-            await this.set(`maxUsersOnline:${roomName}`, onlineUsers, 3600);
+            await this.set(`maxUsersOnline:${roomName}`, onlineUsers, null);
         }
     }
 

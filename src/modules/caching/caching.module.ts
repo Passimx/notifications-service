@@ -10,7 +10,7 @@ import { CacheService } from './caching.service';
             useFactory: () => {
                 return new Redis({
                     host: Envs.redis.host,
-                    port: Number(Envs.redis.port),
+                    port: Envs.redis.port,
                 });
             },
         },
