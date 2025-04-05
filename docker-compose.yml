@@ -109,7 +109,9 @@ services:
   redis:
     image: redis:latest
     container_name: redis
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --port ${REDIS_PORT}
+    expose:
+      - ${REDIS_PORT}
     ports:
       - ${REDIS_PORT}:${REDIS_PORT}
     volumes:

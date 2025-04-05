@@ -27,7 +27,7 @@ export const Envs = {
     },
 
     redis: {
-        host: process.env.Redis_HOST,
-        port: Number(process.env.Redis_PORT),
+        host: process.env.REDIS_HOST,
+        port: Number(process.env.REDIS_PORT),
     },
 };
