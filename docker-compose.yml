@@ -113,7 +113,7 @@ services:
     ports:
       - ${REDIS_PORT}:${REDIS_PORT}
     volumes:
-      - redis-data:/data
+      - ./data/data_redis:/data
 
   redis-commander:
     image: rediscommander/redis-commander:latest
