@@ -21,8 +21,8 @@ export class CacheService {
     }
 
     // Метод для удаления значения из кеша
-    async del(key: string): Promise<number> {
-        return await this.redis.del(key);
+    del(key: string): Promise<number> {
+        return this.redis.del(key);
     }
 
     // Метод для проверки наличия ключа в кеше
@@ -35,7 +35,7 @@ export class CacheService {
         const cachedMaxUsersOnline = (await this.get<number>(`maxUsersOnline:${roomName}`)) || 0;
 
         if (onlineUsers > cachedMaxUsersOnline) {
-            await this.set(`maxUsersOnline:${roomName}`, onlineUsers, null);
+            await this.set(`maxUsersOnline:${roomName}`, onlineUsers);
         }
     }
 
