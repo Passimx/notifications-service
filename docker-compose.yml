@@ -106,6 +106,27 @@ services:
     ports:
       - ${KAFKA_UI_PORT}:${KAFKA_UI_PORT}
 
+  redis:
+    image: redis:latest
+    container_name: redis
+    command: redis-server --appendonly yes
+    ports:
+      - ${REDIS_PORT}:${REDIS_PORT}
+    volumes:
+      - ./data/data_redis:/data
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: redis-commander
+    environment:
+      - REDIS_HOSTS=local:redis:${REDIS_PORT}
+      - HTTP_USER=${REDIS_COMMANDER_USER}
+      - HTTP_PASSWORD=${REDIS_COMMANDER_PASSWORD}
+    ports:
+      - ${REDIS_COMMANDER_PORT}:${REDIS_COMMANDER_PORT}
+    depends_on:
+      - redis
+
 networks:
   main:
     driver: bridge

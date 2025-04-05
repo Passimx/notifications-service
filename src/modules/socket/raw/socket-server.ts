@@ -3,15 +3,16 @@ import { ClientSocket } from '../types/client-socket.type';
 import { DataResponse } from '../../queue/dto/data-response.dto';
 import { chatOnline } from '../types/chat-online.type';
 import { EventsEnum } from '../types/event.enum';
-
 import { QueueService } from '../../queue/queue.service';
 import { TopicsEnum } from '../../queue/type/topics.enum';
+import { CacheService } from '../../caching/caching.service';
 
 @Injectable()
 export class WsServer {
     public readonly rooms: Map<string, Set<ClientSocket>>;
     private readonly selectedClients: Set<ClientSocket>;
     private queueService: QueueService;
+    private cacheService: CacheService;
     private readonly maxUsersOnline: Map<string, number>;
 
     constructor(
@@ -25,6 +26,10 @@ export class WsServer {
 
     public setQueueService(queueService: QueueService) {
         this.queueService = queueService;
+    }
+
+    public setCacheService(cacheService: CacheService) {
+        this.cacheService = cacheService;
     }
 
     public leave(clientId: string, ...roomNames: string[]): boolean {
@@ -56,13 +61,12 @@ export class WsServer {
         return true;
     }
 
-    public join(clientId: string, ...roomNames: string[]): boolean {
+    public async join(clientId: string, ...roomNames: string[]): Promise<boolean> {
         const [client]: ClientSocket[] = Array.from(this.rooms.get(clientId) ?? []);
         if (!client) return false;
 
         const rooms: chatOnline[] = [];
-
-        roomNames.forEach((name) => {
+        for (const name of roomNames) {
             client.client.rooms.add(name);
             const correctRoom = this.rooms.get(name);
 
@@ -70,7 +74,8 @@ export class WsServer {
                 const newRoom = new Set<ClientSocket>();
                 newRoom.add(client);
                 this.rooms.set(name, newRoom);
-                this.maxUsersOnline.set(name, 0);
+                const redisMaxUsersOnline = await this.cacheService.getMaxUsersOnline(name);
+                this.maxUsersOnline.set(name, redisMaxUsersOnline);
             } else {
                 correctRoom.add(client);
             }
@@ -78,13 +83,13 @@ export class WsServer {
             const roundNumbers = this.getNumbersString(onlineUsers);
             rooms.push({ name, onlineUsers: roundNumbers });
 
-            const updateMaxUsersOnline = this.maxUsersOnline.get(name) || 0;
-            if (onlineUsers > updateMaxUsersOnline) {
+            const localMaxUsers = this.maxUsersOnline.get(name) || 0;
+            if (onlineUsers > localMaxUsers) {
+                await this.cacheService.updateMaxUsersOnline(name, onlineUsers);
                 this.maxUsersOnline.set(name, onlineUsers);
                 this.sendMaxUsersToKafka(name, onlineUsers);
             }
-        });
-
+        }
         this.to(clientId).emit(EventsEnum.CHAT_COUNT_ONLINE, new DataResponse<chatOnline[]>(rooms));
 
         rooms.forEach(({ name, onlineUsers }) => {
