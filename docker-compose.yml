@@ -108,7 +108,7 @@ services:
 
   redis:
     image: redis:latest
-    container_name: redis
+    container_name: passimx-redis
     command: redis-server --appendonly yes --port ${REDIS_PORT}
     expose:
       - ${REDIS_PORT}
