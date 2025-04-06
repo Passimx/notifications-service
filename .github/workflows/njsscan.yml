@@ -9,13 +9,9 @@
 name: njsscan sarif
 
 on:
-  push:
-    branches: [ "main" ]
   pull_request:
-    # The branches below must be a subset of the branches above
+    types: [opened, synchronize, reopened]
     branches: [ "main" ]
-  schedule:
-    - cron: '20 17 * * 1'
 
 permissions:
   contents: read
