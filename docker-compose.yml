@@ -112,6 +112,8 @@ services:
     command: redis-server --appendonly yes
     ports:
       - ${REDIS_PORT}:${REDIS_PORT}
+    networks:
+      - main
     volumes:
       - ./data/data_redis:/data
 
@@ -124,6 +126,8 @@ services:
       - HTTP_PASSWORD=${REDIS_COMMANDER_PASSWORD}
     ports:
       - ${REDIS_COMMANDER_PORT}:${REDIS_COMMANDER_PORT}
+    networks:
+      - main
     depends_on:
       - redis
 

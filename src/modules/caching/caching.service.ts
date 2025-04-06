@@ -9,9 +9,9 @@ export class CacheService {
     }
 
     // Метод для установки значения в кеш
-    async set(key: string, value: number, ttl?: number): Promise<void> {
+    async set(key: string, value: number): Promise<void> {
         const stringValue = JSON.stringify(value);
-        await this.redis.set(key, stringValue, 'EX', ttl);
+        await this.redis.set(key, stringValue);
     }
 
     // Метод для получения значения из кеша
