@@ -89,7 +89,9 @@
 							"create_chat",
 							"create_message",
 							"join_chat",
-							"chat_count_online"
+							"chat_count_online",
+							"pong",
+							"ping"
 						]
 					},
 					"data": {
