@@ -90,8 +90,8 @@ export class WsServer {
                 this.sendMaxUsersToKafka(name, onlineUsers);
                 const redisMaxUsersOnline = this.maxUsersOnline.get(name) || 1;
                 this.to(clientId).emit(EventsEnum.MAX_USERS_ONLINE, {
-                    chatName: name,
-                    data: new DataResponse<number>(redisMaxUsersOnline),
+                    name: name,
+                    maxUsersOnline: String(redisMaxUsersOnline),
                 });
             }
         }
