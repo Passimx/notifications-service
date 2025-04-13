@@ -32,32 +32,30 @@ export class WsServer {
         this.cacheService = cacheService;
     }
 
-    public leave(clientId: string, ...roomNames: string[]): boolean {
+    public async leave(clientId: string, ...roomNames: string[]): Promise<boolean> {
         const [client]: ClientSocket[] = Array.from(this.rooms.get(clientId) ?? []);
-
         const rooms: chatOnline[] = [];
         if (!client) return false;
-
-        roomNames.forEach((name) => {
+        for (const name of roomNames) {
             client.client.rooms.delete(name);
-
             const correctRoom = this.rooms.get(name);
-            if (!correctRoom) return;
-
+            if (!correctRoom) continue;
             correctRoom.delete(client);
-            if (!correctRoom.size) return this.rooms.delete(name);
-
+            if (!correctRoom.size) {
+                this.rooms.delete(name);
+                continue;
+            }
             const onlineUsers = this.rooms.get(name).size;
             const roundNumbers = this.getNumbersString(onlineUsers);
-
-            rooms.push({ name: name, onlineUsers: roundNumbers });
-        });
-
-        rooms.forEach(({ name, onlineUsers }) => {
+            const redisMaxUsersOnline = await this.cacheService.getMaxUsersOnline(name); // await здесь
+            rooms.push({ name, onlineUsers: roundNumbers, maxUsersOnline: redisMaxUsersOnline });
+        }
+        for (const { name, onlineUsers, maxUsersOnline } of rooms) {
             const countUsersBefore = this.getNumbersString(this.rooms.get(name).size + 1);
-            if (onlineUsers !== countUsersBefore) this.online({ name, onlineUsers });
-        });
-
+            if (onlineUsers !== countUsersBefore) {
+                this.online({ name, onlineUsers, maxUsersOnline });
+            }
+        }
         return true;
     }
 
@@ -81,7 +79,8 @@ export class WsServer {
             }
             const onlineUsers = this.rooms.get(name).size;
             const roundNumbers = this.getNumbersString(onlineUsers);
-            rooms.push({ name, onlineUsers: roundNumbers });
+            const redisMaxUsersOnline = await this.cacheService.getMaxUsersOnline(name);
+            rooms.push({ name, onlineUsers: roundNumbers, maxUsersOnline: redisMaxUsersOnline });
 
             const localMaxUsers = this.maxUsersOnline.get(name) || 0;
             if (onlineUsers > localMaxUsers) {
@@ -92,9 +91,9 @@ export class WsServer {
         }
         this.to(clientId).emit(EventsEnum.CHAT_COUNT_ONLINE, new DataResponse<chatOnline[]>(rooms));
 
-        rooms.forEach(({ name, onlineUsers }) => {
+        rooms.forEach(({ name, onlineUsers, maxUsersOnline }) => {
             const countUsersBefore = this.getNumbersString(this.rooms.get(name).size - 1);
-            if (onlineUsers !== countUsersBefore) this.online({ name, onlineUsers }, clientId);
+            if (onlineUsers !== countUsersBefore) this.online({ name, onlineUsers, maxUsersOnline }, clientId);
         });
 
         return true;
