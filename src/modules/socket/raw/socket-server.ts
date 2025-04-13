@@ -88,6 +88,14 @@ export class WsServer {
                 await this.cacheService.updateMaxUsersOnline(name, onlineUsers);
                 this.maxUsersOnline.set(name, onlineUsers);
                 this.sendMaxUsersToKafka(name, onlineUsers);
+                const redisMaxUsersOnline = this.maxUsersOnline.get(name) || 1;
+                this.to(clientId).emit(
+                    EventsEnum.MAX_USERS_ONLINE,
+                    new DataResponse<{ name: string; maxUsersOnline: string }>({
+                        name: name,
+                        maxUsersOnline: String(redisMaxUsersOnline),
+                    }),
+                );
             }
         }
         this.to(clientId).emit(EventsEnum.CHAT_COUNT_ONLINE, new DataResponse<chatOnline[]>(rooms));
