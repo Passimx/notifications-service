@@ -1,4 +1,4 @@
 export type ChatMaxUsersOnline = {
-    name: string;
+    id: string;
     maxUsersOnline: string;
 };

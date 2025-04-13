@@ -51,12 +51,12 @@ export class WsServer {
             const onlineUsers = this.rooms.get(name).size;
             const roundNumbers = this.getNumbersString(onlineUsers);
 
-            rooms.push({ name: name, onlineUsers: roundNumbers });
+            rooms.push({ id: name, onlineUsers: roundNumbers });
         });
 
-        rooms.forEach(({ name, onlineUsers }) => {
-            const countUsersBefore = this.getNumbersString(this.rooms.get(name).size + 1);
-            if (onlineUsers !== countUsersBefore) this.online({ name, onlineUsers });
+        rooms.forEach(({ id, onlineUsers }) => {
+            const countUsersBefore = this.getNumbersString(this.rooms.get(id).size + 1);
+            if (onlineUsers !== countUsersBefore) this.online({ id, onlineUsers });
         });
 
         return true;
@@ -67,6 +67,8 @@ export class WsServer {
         if (!client) return false;
 
         const rooms: chatOnline[] = [];
+        const maxOnline: ChatMaxUsersOnline[] = [];
+
         for (const name of roomNames) {
             client.client.rooms.add(name);
             const correctRoom = this.rooms.get(name);
@@ -82,27 +84,33 @@ export class WsServer {
             }
             const onlineUsers = this.rooms.get(name).size;
             const roundNumbers = this.getNumbersString(onlineUsers);
-            rooms.push({ name, onlineUsers: roundNumbers });
-
             const localMaxUsers = this.maxUsersOnline.get(name) || 0;
+
+            rooms.push({ id: name, onlineUsers: roundNumbers });
+            maxOnline.push({ id: name, maxUsersOnline: String(localMaxUsers) });
+
             if (onlineUsers > localMaxUsers) {
                 await this.cacheService.updateMaxUsersOnline(name, onlineUsers);
                 this.maxUsersOnline.set(name, onlineUsers);
                 this.sendMaxUsersToKafka(name, onlineUsers);
                 this.to(clientId).emit(
                     EventsEnum.MAX_USERS_ONLINE,
-                    new DataResponse<ChatMaxUsersOnline>({
-                        name: name,
-                        maxUsersOnline: String(localMaxUsers),
-                    }),
+                    new DataResponse<ChatMaxUsersOnline[]>([
+                        {
+                            id: name,
+                            maxUsersOnline: String(localMaxUsers),
+                        },
+                    ]),
                 );
             }
         }
-        this.to(clientId).emit(EventsEnum.CHAT_COUNT_ONLINE, new DataResponse<chatOnline[]>(rooms));
 
-        rooms.forEach(({ name, onlineUsers }) => {
-            const countUsersBefore = this.getNumbersString(this.rooms.get(name).size - 1);
-            if (onlineUsers !== countUsersBefore) this.online({ name, onlineUsers }, clientId);
+        this.to(clientId).emit(EventsEnum.CHAT_COUNT_ONLINE, new DataResponse<chatOnline[]>(rooms));
+        this.to(clientId).emit(EventsEnum.MAX_USERS_ONLINE, new DataResponse<ChatMaxUsersOnline[]>(maxOnline));
+
+        rooms.forEach(({ id, onlineUsers }) => {
+            const countUsersBefore = this.getNumbersString(this.rooms.get(id).size - 1);
+            if (onlineUsers !== countUsersBefore) this.online({ id, onlineUsers }, clientId);
         });
 
         return true;
@@ -125,7 +133,7 @@ export class WsServer {
     }
 
     public online(room: chatOnline, clientId?: string): void {
-        this.to(room.name)
+        this.to(room.id)
             .except(clientId)
             .emit(EventsEnum.CHAT_COUNT_ONLINE, new DataResponse<chatOnline[]>([room]));
     }
