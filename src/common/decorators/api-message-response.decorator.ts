@@ -6,13 +6,8 @@ export const ApiMessageResponseDecorator = () =>
     applyDecorators(
         ApiExtraModels(MessageDto),
         Get('message'),
-        ApiOperation({ description: `событие message` }),
+        ApiOperation({ description: `Событие message` }),
         ApiOkResponse({
-            schema: {
-                properties: {
-                    event: { type: 'string', description: 'название метода', example: 'message' },
-                    data: { $ref: getSchemaPath(MessageDto) },
-                },
-            },
+            schema: { $ref: getSchemaPath(MessageDto) },
         }),
     );

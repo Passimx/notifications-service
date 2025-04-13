@@ -3,37 +3,19 @@
 	"paths": {
 		"/message": {
 			"get": {
-				"description": "событие message",
+				"description": "Событие message",
 				"operationId": "QueueController_emit",
 				"parameters": [],
 				"responses": {
 					"200": {
 						"schema": {
-							"properties": {
-								"event": {
-									"type": "string",
-									"description": "название метода",
-									"example": "message"
-								},
-								"data": {
-									"$ref": "#/components/schemas/MessageDto"
-								}
-							}
+							"$ref": "#/components/schemas/MessageDto"
 						},
 						"description": "",
 						"content": {
 							"application/json": {
 								"schema": {
-									"properties": {
-										"event": {
-											"type": "string",
-											"description": "название метода",
-											"example": "message"
-										},
-										"data": {
-											"$ref": "#/components/schemas/MessageDto"
-										}
-									}
+									"$ref": "#/components/schemas/MessageDto"
 								}
 							}
 						}
@@ -79,9 +61,6 @@
 			"MessageDto": {
 				"type": "object",
 				"properties": {
-					"to": {
-						"type": "string"
-					},
 					"event": {
 						"type": "string",
 						"enum": [
@@ -97,7 +76,6 @@
 					}
 				},
 				"required": [
-					"to",
 					"event",
 					"data"
 				]
