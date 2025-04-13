@@ -6,6 +6,7 @@ import { EventsEnum } from '../types/event.enum';
 import { QueueService } from '../../queue/queue.service';
 import { TopicsEnum } from '../../queue/type/topics.enum';
 import { CacheService } from '../../caching/caching.service';
+import { ChatMaxUsersOnline } from '../types/chat-max-users-online.type';
 
 @Injectable()
 export class WsServer {
@@ -91,7 +92,7 @@ export class WsServer {
                 const redisMaxUsersOnline = this.maxUsersOnline.get(name) || 1;
                 this.to(clientId).emit(
                     EventsEnum.MAX_USERS_ONLINE,
-                    new DataResponse<{ name: string; maxUsersOnline: string }>({
+                    new DataResponse<ChatMaxUsersOnline>({
                         name: name,
                         maxUsersOnline: String(redisMaxUsersOnline),
                     }),
@@ -183,9 +184,8 @@ export class WsServer {
         clientsRoom.forEach((client) => client.send(JSON.stringify({ event, data })));
     }
 
-    public emit(event: string, data: object | string): void {
+    public emit(event: EventsEnum, data: DataResponse<unknown>): void {
         if (!this.selectedClients.size) return;
-
         this.selectedClients.forEach((client) => client.send(JSON.stringify({ event, data })));
     }
 
