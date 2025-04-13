@@ -89,12 +89,11 @@ export class WsServer {
                 await this.cacheService.updateMaxUsersOnline(name, onlineUsers);
                 this.maxUsersOnline.set(name, onlineUsers);
                 this.sendMaxUsersToKafka(name, onlineUsers);
-                const redisMaxUsersOnline = this.maxUsersOnline.get(name) || 1;
                 this.to(clientId).emit(
                     EventsEnum.MAX_USERS_ONLINE,
                     new DataResponse<ChatMaxUsersOnline>({
                         name: name,
-                        maxUsersOnline: String(redisMaxUsersOnline),
+                        maxUsersOnline: String(localMaxUsers),
                     }),
                 );
             }
