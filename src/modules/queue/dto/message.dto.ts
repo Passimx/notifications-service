@@ -4,7 +4,6 @@ import { EventsEnum } from '../../socket/types/event.enum';
 import { DataResponse } from './data-response.dto';
 
 export class MessageDto<T = unknown> {
-    @ApiProperty()
     @IsString()
     @IsNotEmpty()
     readonly to: string;
