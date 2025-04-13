@@ -22,20 +22,16 @@ import { EventsEnum } from './types/event.enum';
     },
 })
 export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
-    private readonly pingTimeout = new Map<string, NodeJS.Timeout>();
-    private readonly pongTime = 25000;
-
     handleConnection(@ConnectedSocket() socket: ClientSocket, @Req() request: FastifyRequest): void {
         socket.client = new CustomWebSocketClient(request);
         socket.id = socket.client.id;
         wsServer.addConnection(socket);
         wsServer.to(socket.id).emit(EventsEnum.GET_SOCKET_ID, socket.id);
-        this.setPingTimeout(socket);
+        socket.client.setPingTimeout(socket);
     }
 
     handleDisconnect(@ConnectedSocket() socket: ClientSocket): void {
-        clearTimeout(this.pingTimeout.get(socket.id));
-        this.pingTimeout.delete(socket.id);
+        socket.client.clearPingTimeout();
         wsServer.deleteConnection(socket);
         socket.close();
     }
@@ -43,18 +39,6 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @SubscribeMessage(EventsEnum.PING)
     handPong(@ConnectedSocket() socket: ClientSocket): void {
         wsServer.to(socket.id).emit(EventsEnum.PONG, 'ok');
-        this.setPingTimeout(socket);
-    }
-
-    private setPingTimeout(socket: ClientSocket): void {
-        clearTimeout(this.pingTimeout.get(socket.id));
-        this.pingTimeout.set(
-            socket.id,
-            setTimeout(() => {
-                socket.close();
-                wsServer.deleteConnection(socket);
-                this.pingTimeout.delete(socket.id);
-            }, this.pongTime),
-        );
+        socket.client.setPingTimeout(socket);
     }
 }

@@ -1,5 +1,6 @@
 import { FastifyRequest } from 'fastify';
 import wsServer from '../raw/socket-server';
+import { Envs } from '../../../common/envs/envs';
 
 export class CustomWebSocketClient {
     public id!: string;
@@ -7,6 +8,8 @@ export class CustomWebSocketClient {
     public headers!: { [key: string]: string };
 
     public readonly rooms!: Set<string>;
+
+    private pingTimeout: NodeJS.Timeout | null;
 
     constructor(request: FastifyRequest) {
         this.rooms = new Set<string>();
@@ -24,6 +27,21 @@ export class CustomWebSocketClient {
 
     public leaveAll(): void {
         this.rooms.forEach((roomName) => this.leave(roomName));
+    }
+
+    public setPingTimeout(socket: ClientSocket): void {
+        this.clearPingTimeout();
+        this.pingTimeout = setTimeout(() => {
+            socket.close();
+            wsServer.deleteConnection(socket);
+        }, Envs.main.pingTime);
+    }
+
+    public clearPingTimeout(): void {
+        if (this.pingTimeout) {
+            clearTimeout(this.pingTimeout);
+            this.pingTimeout = null;
+        }
     }
 }
 
