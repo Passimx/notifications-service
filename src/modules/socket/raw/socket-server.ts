@@ -117,8 +117,8 @@ export class WsServer {
     }
 
     private sendMaxUsersToKafka(roomName: string, onlineUsers: number) {
-        const massage = { roomName, onlineUsers };
-        const response = new DataResponse(massage);
+        const message = { roomName, onlineUsers };
+        const response = new DataResponse(message);
         this.queueService.sendMessage(TopicsEnum.ONLINE, response);
     }
 
