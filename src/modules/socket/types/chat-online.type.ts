@@ -1,4 +1,4 @@
 export type chatOnline = {
-    name: string;
+    id: string;
     onlineUsers: string;
 };
