@@ -7,8 +7,9 @@ export class DataResponse<T> {
     @ApiProperty()
     readonly data: string | T;
 
-    constructor(data: string | T) {
-        this.success = typeof data !== 'string';
+    constructor(data: string | T, success?: boolean) {
+        if (success == undefined) this.success = typeof data !== 'string';
+        else this.success = success;
 
         this.data = data;
     }
