@@ -51,12 +51,12 @@ export class WsServer {
             const onlineUsers = this.rooms.get(name).size;
             const roundNumbers = this.getNumbersString(onlineUsers);
 
-            rooms.push({ id: name, onlineUsers: roundNumbers });
+            rooms.push({ id: name, online: roundNumbers });
         });
 
-        rooms.forEach(({ id, onlineUsers }) => {
-            const countUsersBefore = this.getNumbersString(this.rooms.get(id).size + 1);
-            if (onlineUsers !== countUsersBefore) this.online({ id, onlineUsers });
+        rooms.forEach(({ id, online }) => {
+            const onlineBefore = this.getNumbersString(this.rooms.get(id).size + 1);
+            if (online !== onlineBefore) this.online({ id, online });
         });
 
         return true;
@@ -86,7 +86,7 @@ export class WsServer {
             const roundNumbers = this.getNumbersString(onlineUsers);
             const localMaxUsers = this.maxUsersOnline.get(name) || 0;
 
-            rooms.push({ id: name, onlineUsers: roundNumbers });
+            rooms.push({ id: name, online: roundNumbers });
             maxOnline.push({ id: name, maxUsersOnline: String(localMaxUsers) });
 
             if (onlineUsers > localMaxUsers) {
@@ -108,9 +108,9 @@ export class WsServer {
         this.to(clientId).emit(EventsEnum.CHAT_COUNT_ONLINE, new DataResponse<chatOnline[]>(rooms));
         this.to(clientId).emit(EventsEnum.MAX_USERS_ONLINE, new DataResponse<ChatMaxUsersOnline[]>(maxOnline));
 
-        rooms.forEach(({ id, onlineUsers }) => {
-            const countUsersBefore = this.getNumbersString(this.rooms.get(id).size - 1);
-            if (onlineUsers !== countUsersBefore) this.online({ id, onlineUsers }, clientId);
+        rooms.forEach(({ id, online }) => {
+            const onlineBefore = this.getNumbersString(this.rooms.get(id).size - 1);
+            if (online !== onlineBefore) this.online({ id, online }, clientId);
         });
 
         return true;
