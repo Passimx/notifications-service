@@ -9,7 +9,7 @@ export const Envs = {
         host: process.env.APP_HOST_NOTIFICATION || '0.0.0.0',
         appPort: NumbersUtils.toNumberOrDefault(process.env.APP_PORT_NOTIFICATION, 3000),
         socketIoPort: NumbersUtils.toNumberOrDefault(process.env.SOCKET_PORT_NOTIFICATION, 3000),
-        pingTime: Number(process.env.PING_TIME),
+        pingTime: NumbersUtils.toNumberOrDefault(process.env.PING_TIME, 25000),
     },
 
     swagger: {

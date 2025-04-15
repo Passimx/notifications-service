@@ -9,6 +9,7 @@ import { FastifyRequest } from 'fastify';
 import { Req } from '@nestjs/common';
 import { Envs } from '../../common/envs/envs';
 import { ApiController } from '../../common/decorators/api-controller.decorator';
+import { DataResponse } from '../queue/dto/data-response.dto';
 import { ClientSocket, CustomWebSocketClient } from './types/client-socket.type';
 import wsServer from './raw/socket-server';
 import { EventsEnum } from './types/event.enum';
@@ -27,18 +28,16 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
         socket.id = socket.client.id;
         wsServer.addConnection(socket);
         wsServer.to(socket.id).emit(EventsEnum.GET_SOCKET_ID, socket.id);
-        socket.client.setPingTimeout(socket);
     }
 
     handleDisconnect(@ConnectedSocket() socket: ClientSocket): void {
-        socket.client.clearPingTimeout();
         wsServer.deleteConnection(socket);
         socket.close();
     }
 
     @SubscribeMessage(EventsEnum.PING)
     handPong(@ConnectedSocket() socket: ClientSocket): void {
-        wsServer.to(socket.id).emit(EventsEnum.PONG, 'ok');
+        wsServer.to(socket.id).emit(EventsEnum.PONG, new DataResponse('ok'));
         socket.client.setPingTimeout(socket);
     }
 }
