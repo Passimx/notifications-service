@@ -67,7 +67,6 @@ export class WsServer {
         if (!client) return false;
 
         const rooms: chatOnline[] = [];
-        const maxOnline: ChatMaxUsersOnline[] = [];
 
         for (const name of roomNames) {
             client.client.rooms.add(name);
@@ -87,26 +86,25 @@ export class WsServer {
             const localMaxUsers = this.maxUsersOnline.get(name) || 0;
 
             rooms.push({ id: name, online: roundNumbers });
-            maxOnline.push({ id: name, maxUsersOnline: String(localMaxUsers) });
 
             if (onlineUsers > localMaxUsers) {
                 await this.cacheService.updateMaxUsersOnline(name, onlineUsers);
                 this.maxUsersOnline.set(name, onlineUsers);
                 this.sendMaxUsersToKafka(name, onlineUsers);
-                this.to(clientId).emit(
+                this.to(name).emit(
                     EventsEnum.MAX_USERS_ONLINE,
                     new DataResponse<ChatMaxUsersOnline[]>([
                         {
                             id: name,
-                            maxUsersOnline: String(localMaxUsers),
+                            maxUsersOnline: String(onlineUsers),
                         },
                     ]),
                 );
             }
         }
 
+        // новый пользователь сразу получает актуальную информацию
         this.to(clientId).emit(EventsEnum.CHAT_COUNT_ONLINE, new DataResponse<chatOnline[]>(rooms));
-        this.to(clientId).emit(EventsEnum.MAX_USERS_ONLINE, new DataResponse<ChatMaxUsersOnline[]>(maxOnline));
 
         rooms.forEach(({ id, online }) => {
             const onlineBefore = this.getNumbersString(this.rooms.get(id).size - 1);
