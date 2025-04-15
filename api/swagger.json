@@ -69,6 +69,8 @@
 							"create_message",
 							"join_chat",
 							"chat_count_online",
+							"pong",
+							"ping",
 							"max_users_online"
 						]
 					},
