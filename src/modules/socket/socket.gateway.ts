@@ -27,7 +27,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
         socket.client = new CustomWebSocketClient(request);
         socket.id = socket.client.id;
         wsServer.addConnection(socket);
-        wsServer.to(socket.id).emit(EventsEnum.GET_SOCKET_ID, socket.id);
+        wsServer.to(socket.id).emit(EventsEnum.GET_SOCKET_ID, new DataResponse<string>(socket.id, true));
     }
 
     handleDisconnect(@ConnectedSocket() socket: ClientSocket): void {

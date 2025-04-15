@@ -6,4 +6,5 @@ export enum EventsEnum {
     CHAT_COUNT_ONLINE = 'chat_count_online',
     PONG = 'pong',
     PING = 'ping',
+    MAX_USERS_ONLINE = 'max_users_online',
 }
