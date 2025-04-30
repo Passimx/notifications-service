@@ -1,15 +1,17 @@
 import { FastifyRequest } from 'fastify';
-import wsServer from '../raw/socket-server';
 import { Envs } from '../../../common/envs/envs';
+import { WsServer } from '../raw/socket-server';
 
 export class CustomWebSocketClient {
     public id!: string;
 
     public headers!: { [key: string]: string };
 
-    public readonly rooms!: Set<string>;
+    public rooms!: Set<string>;
 
-    private pingTimeout: NodeJS.Timeout | null;
+    private pingTimeout: NodeJS.Timeout | undefined;
+
+    private wsServer: WsServer;
 
     constructor(request: FastifyRequest) {
         this.rooms = new Set<string>();
@@ -18,11 +20,11 @@ export class CustomWebSocketClient {
     }
 
     public join(roomName: string): void {
-        wsServer.join(this.id, roomName);
+        this.wsServer.join(this.id, roomName);
     }
 
     public leave(roomName: string): void {
-        wsServer.leave(this.id, roomName);
+        this.wsServer.leave(this.id, roomName);
     }
 
     public leaveAll(): void {
@@ -33,7 +35,7 @@ export class CustomWebSocketClient {
         this.clearPingTimeout();
         this.pingTimeout = setTimeout(() => {
             socket.close();
-            wsServer.deleteConnection(socket);
+            this.wsServer.deleteConnection(socket);
         }, Envs.main.pingTime);
     }
 
@@ -42,6 +44,10 @@ export class CustomWebSocketClient {
             clearTimeout(this.pingTimeout);
             this.pingTimeout = null;
         }
+    }
+
+    public setWsServer(wsServer: WsServer) {
+        this.wsServer = wsServer;
     }
 }
 

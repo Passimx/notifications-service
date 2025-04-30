@@ -1,37 +1,24 @@
 import { Injectable } from '@nestjs/common';
-import { ClientSocket } from '../types/client-socket.type';
+import { FastifyRequest } from 'fastify';
+import { ClientSocket, CustomWebSocketClient } from '../types/client-socket.type';
 import { DataResponse } from '../../queue/dto/data-response.dto';
-import { chatOnline } from '../types/chat-online.type';
 import { EventsEnum } from '../types/event.enum';
-import { QueueService } from '../../queue/queue.service';
-import { TopicsEnum } from '../../queue/type/topics.enum';
+import { chatOnline } from '../types/chat-online.type';
 import { CacheService } from '../../caching/caching.service';
 import { ChatMaxUsersOnline } from '../types/chat-max-users-online.type';
+import { QueueService } from '../../queue/queue.service';
+import { TopicsEnum } from '../../queue/type/topics.enum';
+import { WsInstance } from './ws-instance';
 
 @Injectable()
 export class WsServer {
-    public readonly rooms: Map<string, Set<ClientSocket>>;
-    private readonly selectedClients: Set<ClientSocket>;
-    private queueService: QueueService;
-    private cacheService: CacheService;
-    private readonly maxUsersOnline: Map<string, number>;
+    public readonly rooms: Map<string, Set<ClientSocket>> = new Map<string, Set<ClientSocket>>();
+    private readonly maxUsersOnline: Map<string, number> = new Map<string, number>();
 
     constructor(
-        rooms: Map<string, Set<ClientSocket>> = new Map<string, Set<ClientSocket>>(),
-        selectedClients: Set<ClientSocket> = new Set<ClientSocket>(),
-    ) {
-        this.rooms = rooms;
-        this.selectedClients = selectedClients;
-        this.maxUsersOnline = new Map<string, number>();
-    }
-
-    public setQueueService(queueService: QueueService) {
-        this.queueService = queueService;
-    }
-
-    public setCacheService(cacheService: CacheService) {
-        this.cacheService = cacheService;
-    }
+        private readonly cacheService: CacheService,
+        private readonly queueService: QueueService,
+    ) {}
 
     public leave(clientId: string, ...roomNames: string[]): boolean {
         const [client]: ClientSocket[] = Array.from(this.rooms.get(clientId) ?? []);
@@ -136,67 +123,23 @@ export class WsServer {
             .emit(EventsEnum.CHAT_COUNT_ONLINE, new DataResponse<chatOnline[]>([room]));
     }
 
-    public to(roomName: string): WsServer {
+    public to(roomName: string): WsInstance {
         const room = new Set(this.rooms.get(roomName));
-        const selectedClients = new Set<ClientSocket>(this.selectedClients);
+        const selectedClients = new Set<ClientSocket>();
 
         if (room) room.forEach((client) => selectedClients.add(client));
         const rooms = new Map<string, Set<ClientSocket>>(this.rooms);
 
-        return new WsServer(rooms, selectedClients);
+        return new WsInstance(rooms, selectedClients);
     }
 
-    public except(roomName: string): WsServer {
-        const rooms = new Map(this.rooms);
-        const selectedClients = new Set<ClientSocket>(this.selectedClients);
-        const exceptedRoom = this.rooms.get(roomName);
-
-        if (exceptedRoom) exceptedRoom.forEach((client) => selectedClients.delete(client));
-
-        return new WsServer(rooms, selectedClients);
-    }
-
-    public intersect(...intersectRooms: string[]): WsServer {
-        const selectedClients = new Set<ClientSocket>(this.selectedClients);
-        const rooms = new Map(this.rooms);
-
-        const clientRoomsCount = new Map<ClientSocket, number>();
-
-        intersectRooms.forEach((roomName) => {
-            const clients = rooms.get(roomName);
-
-            if (clients) {
-                clients.forEach((client) => {
-                    const correctClientRoomsCount = clientRoomsCount.get(client);
-
-                    if (correctClientRoomsCount) clientRoomsCount.set(client, correctClientRoomsCount + 1);
-                    else clientRoomsCount.set(client, 1);
-                });
-            }
-        });
-
-        clientRoomsCount.forEach((count, client) => {
-            if (count === intersectRooms.length) selectedClients.add(client);
-        });
-
-        return new WsServer(rooms, selectedClients);
-    }
-
-    public emitAll(event: string, data: object | string) {
-        const clientsRoom = new Set<ClientSocket>();
-        this.rooms.forEach((room) => room.forEach((client) => clientsRoom.add(client)));
-
-        clientsRoom.forEach((client) => client.send(JSON.stringify({ event, data })));
-    }
-
-    public emit(event: EventsEnum, data: DataResponse<unknown>): void {
-        if (!this.selectedClients.size) return;
-        this.selectedClients.forEach((client) => client.send(JSON.stringify({ event, data })));
-    }
-
-    public addConnection(client: ClientSocket): boolean {
+    public addConnection(client: ClientSocket, request: FastifyRequest): boolean {
+        client.client = new CustomWebSocketClient(request);
+        client.id = client.client.id;
         if (!client.id) return false;
 
+        client.id = client.client.id;
+        client.client.setWsServer(this);
         const userRoom = new Set<ClientSocket>();
         userRoom.add(client);
         this.rooms.set(client.id, userRoom);
@@ -210,12 +153,4 @@ export class WsServer {
         client.client.leaveAll();
         return this.rooms.delete(client.id);
     }
-
-    public getConnection(clientId: string): ClientSocket {
-        const [client] = Array.from(this.rooms.get(clientId) ?? []);
-
-        return client;
-    }
 }
-
-export default new WsServer();
