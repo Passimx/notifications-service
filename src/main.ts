@@ -7,6 +7,7 @@ import { Envs } from './common/envs/envs';
 import { logger } from './common/logger/logger';
 import { useSwagger } from './common/config/swagger/use-swagger';
 import { useKafka } from './common/config/kafka/use-kafka';
+import { HttpExceptionFilter } from './modules/exceptionFilters/http-exception.filter';
 
 async function bootstrap() {
     const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter(), {
@@ -23,6 +24,8 @@ async function bootstrap() {
     });
 
     app.useWebSocketAdapter(new WsAdapter(app));
+
+    app.useGlobalFilters(new HttpExceptionFilter());
 
     await app.listen(Envs.main.appPort, Envs.main.host);
 
