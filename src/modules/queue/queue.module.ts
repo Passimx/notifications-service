@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { Envs } from '../../common/envs/envs';
+import { SocketModule } from '../socket/socket.module';
 import { QueueController } from './queue.controller';
 import { QueueService } from './queue.service';
 import { InjectEnum } from './type/inject.enum';
@@ -9,6 +10,7 @@ import { InjectEnum } from './type/inject.enum';
     controllers: [QueueController],
 
     imports: [
+        forwardRef(() => SocketModule),
         ClientsModule.register([
             {
                 name: InjectEnum.NOTIFICATIONS_MICROSERVICE,

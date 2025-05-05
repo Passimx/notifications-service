@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ClientSocket } from '../types/client-socket.type';
 import { DataResponse } from '../../queue/dto/data-response.dto';
 import { chatOnline } from '../types/chat-online.type';
@@ -9,29 +9,31 @@ import { CacheService } from '../../caching/caching.service';
 import { ChatMaxUsersOnline } from '../types/chat-max-users-online.type';
 
 @Injectable()
+export class WsServerFactory {
+    constructor(
+        @Inject(QueueService) private readonly queueService: QueueService,
+        @Inject(CacheService) private readonly cacheService: CacheService,
+    ) {}
+
+    create(rooms: Map<string, Set<ClientSocket>>, selectedClients: Set<ClientSocket>): WsServer {
+        const instance = new WsServer(this.queueService, this.cacheService, this);
+        instance.rooms = rooms;
+        instance.selectedClients = selectedClients;
+        return instance;
+    }
+}
+
+@Injectable()
 export class WsServer {
-    public readonly rooms: Map<string, Set<ClientSocket>>;
-    private readonly selectedClients: Set<ClientSocket>;
-    private queueService: QueueService;
-    private cacheService: CacheService;
-    private readonly maxUsersOnline: Map<string, number>;
+    public rooms: Map<string, Set<ClientSocket>> = new Map();
+    public selectedClients: Set<ClientSocket> = new Set();
+    private readonly maxUsersOnline: Map<string, number> = new Map();
 
     constructor(
-        rooms: Map<string, Set<ClientSocket>> = new Map<string, Set<ClientSocket>>(),
-        selectedClients: Set<ClientSocket> = new Set<ClientSocket>(),
-    ) {
-        this.rooms = rooms;
-        this.selectedClients = selectedClients;
-        this.maxUsersOnline = new Map<string, number>();
-    }
-
-    public setQueueService(queueService: QueueService) {
-        this.queueService = queueService;
-    }
-
-    public setCacheService(cacheService: CacheService) {
-        this.cacheService = cacheService;
-    }
+        @Inject(QueueService) private readonly queueService: QueueService,
+        @Inject(CacheService) private readonly cacheService: CacheService,
+        @Inject(WsServerFactory) private readonly factory: WsServerFactory, // Убрали optional
+    ) {}
 
     public leave(clientId: string, ...roomNames: string[]): boolean {
         const [client]: ClientSocket[] = Array.from(this.rooms.get(clientId) ?? []);
@@ -143,7 +145,7 @@ export class WsServer {
         if (room) room.forEach((client) => selectedClients.add(client));
         const rooms = new Map<string, Set<ClientSocket>>(this.rooms);
 
-        return new WsServer(rooms, selectedClients);
+        return this.factory.create(rooms, selectedClients);
     }
 
     public except(roomName: string): WsServer {
@@ -153,7 +155,7 @@ export class WsServer {
 
         if (exceptedRoom) exceptedRoom.forEach((client) => selectedClients.delete(client));
 
-        return new WsServer(rooms, selectedClients);
+        return this.factory.create(rooms, selectedClients);
     }
 
     public intersect(...intersectRooms: string[]): WsServer {
@@ -179,7 +181,7 @@ export class WsServer {
             if (count === intersectRooms.length) selectedClients.add(client);
         });
 
-        return new WsServer(rooms, selectedClients);
+        return this.factory.create(rooms, selectedClients);
     }
 
     public emitAll(event: string, data: object | string) {
@@ -217,5 +219,3 @@ export class WsServer {
         return client;
     }
 }
-
-export default new WsServer();

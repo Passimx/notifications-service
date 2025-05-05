@@ -6,12 +6,12 @@ import {
     WebSocketGateway,
 } from '@nestjs/websockets';
 import { FastifyRequest } from 'fastify';
-import { Req } from '@nestjs/common';
+import { Inject, Req } from '@nestjs/common';
 import { Envs } from '../../common/envs/envs';
 import { ApiController } from '../../common/decorators/api-controller.decorator';
 import { DataResponse } from '../queue/dto/data-response.dto';
 import { ClientSocket, CustomWebSocketClient } from './types/client-socket.type';
-import wsServer from './raw/socket-server';
+import { WsServer } from './raw/socket-server';
 import { EventsEnum } from './types/event.enum';
 
 @ApiController()
@@ -23,21 +23,23 @@ import { EventsEnum } from './types/event.enum';
     },
 })
 export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
+    constructor(@Inject(WsServer) private readonly wsServer: WsServer) {}
+
     handleConnection(@ConnectedSocket() socket: ClientSocket, @Req() request: FastifyRequest): void {
-        socket.client = new CustomWebSocketClient(request);
+        socket.client = new CustomWebSocketClient(request, this.wsServer);
         socket.id = socket.client.id;
-        wsServer.addConnection(socket);
-        wsServer.to(socket.id).emit(EventsEnum.GET_SOCKET_ID, new DataResponse<string>(socket.id, true));
+        this.wsServer.addConnection(socket);
+        this.wsServer.to(socket.id).emit(EventsEnum.GET_SOCKET_ID, new DataResponse<string>(socket.id, true));
     }
 
     handleDisconnect(@ConnectedSocket() socket: ClientSocket): void {
-        wsServer.deleteConnection(socket);
+        this.wsServer.deleteConnection(socket);
         socket.close();
     }
 
     @SubscribeMessage(EventsEnum.PING)
     handPong(@ConnectedSocket() socket: ClientSocket): void {
-        wsServer.to(socket.id).emit(EventsEnum.PONG, new DataResponse('ok'));
+        this.wsServer.to(socket.id).emit(EventsEnum.PONG, new DataResponse('ok'));
         socket.client.setPingTimeout(socket);
     }
 }
