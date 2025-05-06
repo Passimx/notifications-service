@@ -1,12 +1,12 @@
-import { Controller, HttpException, HttpStatus, Inject, UseFilters } from '@nestjs/common';
-import { EventPattern } from '@nestjs/microservices';
+import { Controller, Inject, UseFilters } from '@nestjs/common';
+import { EventPattern, RpcException } from '@nestjs/microservices';
 import { WsServer } from '../socket/raw/socket-server';
 import { ApiMessageResponseDecorator } from '../../common/decorators/api-message-response.decorator';
-import { HttpExceptionFilter } from '../exceptionFilters/http-exception.filter';
+import { KafkaExceptionFilter } from '../exceptionFilters/RpcExceptionFilter';
 import { MessageDto } from './dto/message.dto';
 
 @Controller()
-@UseFilters(HttpExceptionFilter)
+@UseFilters(KafkaExceptionFilter)
 export class QueueController {
     constructor(@Inject(WsServer) private readonly wsServer: WsServer) {}
 
@@ -14,7 +14,7 @@ export class QueueController {
     @ApiMessageResponseDecorator()
     emit(body: MessageDto) {
         if (!body) {
-            throw new HttpException('Body is required', HttpStatus.BAD_REQUEST);
+            throw new RpcException('Body is required');
         }
         this.wsServer.to(body.to).emit(body.event, body.data);
     }
@@ -28,7 +28,6 @@ export class QueueController {
     @EventPattern('leave')
     leave(body: MessageDto<string[]>) {
         const { data } = body.data;
-
         this.wsServer.leave(body.to, ...data);
     }
 }
