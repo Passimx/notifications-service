@@ -8,21 +8,6 @@ import { TopicsEnum } from '../../queue/type/topics.enum';
 import { CacheService } from '../../caching/caching.service';
 import { ChatMaxUsersOnline } from '../types/chat-max-users-online.type';
 
-// @Injectable()
-// export class WsServerFactory {
-//     constructor(
-//         private readonly queueService: QueueService,
-//         private readonly cacheService: CacheService,
-//     ) {}
-//
-//     create(rooms: Map<string, Set<ClientSocket>>, selectedClients: Set<ClientSocket>): WsServer {
-//         const instance = new WsServer(this.queueService, this.cacheService, this);
-//         instance.rooms = rooms;
-//         instance.selectedClients = selectedClients;
-//         return instance;
-//     }
-// }
-
 @Injectable()
 export class WsServer {
     public rooms: Map<string, Set<ClientSocket>> = new Map();
