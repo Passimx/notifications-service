@@ -6,7 +6,7 @@ import {
     WebSocketGateway,
 } from '@nestjs/websockets';
 import { FastifyRequest } from 'fastify';
-import { Inject, Req } from '@nestjs/common';
+import { Req } from '@nestjs/common';
 import { Envs } from '../../common/envs/envs';
 import { ApiController } from '../../common/decorators/api-controller.decorator';
 import { DataResponse } from '../queue/dto/data-response.dto';
@@ -23,7 +23,7 @@ import { EventsEnum } from './types/event.enum';
     },
 })
 export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
-    constructor(@Inject(WsServer) private readonly wsServer: WsServer) {}
+    constructor(private readonly wsServer: WsServer) {}
 
     handleConnection(@ConnectedSocket() socket: ClientSocket, @Req() request: FastifyRequest): void {
         socket.client = new CustomWebSocketClient(request, this.wsServer);
