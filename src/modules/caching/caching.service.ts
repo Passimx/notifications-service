@@ -1,12 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Redis } from 'ioredis';
-import wsServer from '../socket/raw/socket-server';
 
 @Injectable()
 export class CacheService {
-    constructor(@Inject('REDIS') private redis: Redis) {
-        wsServer.setCacheService(this);
-    }
+    constructor(@Inject('REDIS') private redis: Redis) {}
 
     // Метод для установки значения в кеш
     async set(key: string, value: number): Promise<void> {

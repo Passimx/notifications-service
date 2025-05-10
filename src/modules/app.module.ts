@@ -4,6 +4,6 @@ import { QueueModule } from './queue/queue.module';
 import { CacheModule } from './caching/caching.module';
 
 @Module({
-    imports: [SocketModule, QueueModule, CacheModule],
+    imports: [CacheModule, SocketModule, QueueModule],
 })
 export class AppModule {}

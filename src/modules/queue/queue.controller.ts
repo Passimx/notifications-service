@@ -1,27 +1,30 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Inject, UseFilters } from '@nestjs/common';
 import { EventPattern } from '@nestjs/microservices';
-import wsServer from '../socket/raw/socket-server';
+import { WsServer } from '../socket/raw/socket-server';
 import { ApiMessageResponseDecorator } from '../../common/decorators/api-message-response.decorator';
+import { KafkaExceptionFilter } from '../exceptionFilters/RpcExceptionFilter';
 import { MessageDto } from './dto/message.dto';
 
 @Controller()
+@UseFilters(KafkaExceptionFilter)
 export class QueueController {
+    constructor(@Inject(WsServer) private readonly wsServer: WsServer) {}
+
     @EventPattern('emit')
     @ApiMessageResponseDecorator()
     emit(body: MessageDto) {
-        wsServer.to(body.to).emit(body.event, body.data);
+        this.wsServer.to(body.to).emit(body.event, body.data);
     }
 
     @EventPattern('join')
     join(body: MessageDto<string[]>) {
         const { data } = body.data;
-        wsServer.join(body.to, ...data);
+        this.wsServer.join(body.to, ...data);
     }
 
     @EventPattern('leave')
     leave(body: MessageDto<string[]>) {
         const { data } = body.data;
-
-        wsServer.leave(body.to, ...data);
+        this.wsServer.leave(body.to, ...data);
     }
 }

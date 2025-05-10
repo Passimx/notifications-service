@@ -10,27 +10,20 @@ import { ChatMaxUsersOnline } from '../types/chat-max-users-online.type';
 
 @Injectable()
 export class WsServer {
-    public readonly rooms: Map<string, Set<ClientSocket>>;
-    private readonly selectedClients: Set<ClientSocket>;
-    private queueService: QueueService;
-    private cacheService: CacheService;
-    private readonly maxUsersOnline: Map<string, number>;
+    public rooms: Map<string, Set<ClientSocket>> = new Map();
+    public selectedClients: Set<ClientSocket> = new Set();
+    private readonly maxUsersOnline: Map<string, number> = new Map();
 
     constructor(
-        rooms: Map<string, Set<ClientSocket>> = new Map<string, Set<ClientSocket>>(),
-        selectedClients: Set<ClientSocket> = new Set<ClientSocket>(),
-    ) {
-        this.rooms = rooms;
-        this.selectedClients = selectedClients;
-        this.maxUsersOnline = new Map<string, number>();
-    }
+        private readonly queueService: QueueService,
+        private readonly cacheService: CacheService,
+    ) {}
 
-    public setQueueService(queueService: QueueService) {
-        this.queueService = queueService;
-    }
-
-    public setCacheService(cacheService: CacheService) {
-        this.cacheService = cacheService;
+    private createNewInstance(rooms: Map<string, Set<ClientSocket>>, selectedClients: Set<ClientSocket>): WsServer {
+        const instance = new WsServer(this.queueService, this.cacheService);
+        instance.rooms = rooms;
+        instance.selectedClients = selectedClients;
+        return instance;
     }
 
     public leave(clientId: string, ...roomNames: string[]): boolean {
@@ -143,7 +136,7 @@ export class WsServer {
         if (room) room.forEach((client) => selectedClients.add(client));
         const rooms = new Map<string, Set<ClientSocket>>(this.rooms);
 
-        return new WsServer(rooms, selectedClients);
+        return this.createNewInstance(rooms, selectedClients);
     }
 
     public except(roomName: string): WsServer {
@@ -153,7 +146,7 @@ export class WsServer {
 
         if (exceptedRoom) exceptedRoom.forEach((client) => selectedClients.delete(client));
 
-        return new WsServer(rooms, selectedClients);
+        return this.createNewInstance(rooms, selectedClients);
     }
 
     public intersect(...intersectRooms: string[]): WsServer {
@@ -179,7 +172,7 @@ export class WsServer {
             if (count === intersectRooms.length) selectedClients.add(client);
         });
 
-        return new WsServer(rooms, selectedClients);
+        return this.createNewInstance(rooms, selectedClients);
     }
 
     public emitAll(event: string, data: object | string) {
@@ -217,5 +210,3 @@ export class WsServer {
         return client;
     }
 }
-
-export default new WsServer();
