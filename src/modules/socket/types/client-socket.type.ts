@@ -18,6 +18,7 @@ export class CustomWebSocketClient {
         this.rooms = new Set<string>();
         this.id = request.headers['sec-websocket-key'] ?? 'unknown';
         this.headers = request.headers as { [key: string]: string };
+        this.pingTimeout = null;
     }
 
     public join(roomName: string): void {
