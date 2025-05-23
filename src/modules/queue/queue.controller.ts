@@ -35,8 +35,10 @@ export class QueueController implements OnModuleInit {
     @EventPattern('system_chats')
     getSystemChats(body: MessageDto<string[]>) {
         const { data } = body.data;
+        if (typeof data === 'string') {
+            return;
+        }
 
-        const chatIds = Array.isArray(data) ? data : [data];
-        this.wsServer.getSystemChats(chatIds);
+        this.wsServer.getSystemChats(data);
     }
 }

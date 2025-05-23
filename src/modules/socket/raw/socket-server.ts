@@ -31,7 +31,7 @@ export class WsServer {
         this.queueService.sendMessage(TopicsEnum.PUT_SYSTEM_CHATS, new DataResponse(''));
     }
 
-    public getSystemChats(chatId: string[]): void {
+    public getSystemChats(chatId: string[]) {
         chatId.forEach((chatId) => {
             this.systemChats.add(chatId);
         });
@@ -139,9 +139,13 @@ export class WsServer {
     }
 
     public online(room: chatOnline, clientId?: string): void {
-        this.to(room.id)
-            .except(clientId)
-            .emit(EventsEnum.CHAT_COUNT_ONLINE, new DataResponse<chatOnline[]>([room]));
+        if (this.systemChats.has(room.id)) {
+            return;
+        } else {
+            this.to(room.id)
+                .except(clientId)
+                .emit(EventsEnum.CHAT_COUNT_ONLINE, new DataResponse<chatOnline[]>([room]));
+        }
     }
 
     public to(roomName: string): WsServer {
