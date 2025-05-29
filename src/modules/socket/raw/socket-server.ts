@@ -31,7 +31,7 @@ export class WsServer {
         this.queueService.sendMessage(TopicsEnum.PUT_SYSTEM_CHATS, new DataResponse(''));
     }
 
-    public getSystemChats(chatId: string[]) {
+    public setSystemChats(chatId: string[]) {
         chatId.forEach((chatId) => {
             this.systemChats.add(chatId);
         });
@@ -94,6 +94,8 @@ export class WsServer {
             if (onlineUsers > localMaxUsers) {
                 if (this.systemChats.has(name)) {
                     this.sendMaxUsersToKafka(name, onlineUsers);
+                    await this.cacheService.updateMaxUsersOnline(name, onlineUsers);
+                    this.maxUsersOnline.set(name, onlineUsers);
                 } else {
                     await this.cacheService.updateMaxUsersOnline(name, onlineUsers);
                     this.maxUsersOnline.set(name, onlineUsers);
@@ -139,9 +141,7 @@ export class WsServer {
     }
 
     public online(room: chatOnline, clientId?: string): void {
-        if (this.systemChats.has(room.id)) {
-            return;
-        } else {
+        if (!this.systemChats.has(room.id)) {
             this.to(room.id)
                 .except(clientId)
                 .emit(EventsEnum.CHAT_COUNT_ONLINE, new DataResponse<chatOnline[]>([room]));

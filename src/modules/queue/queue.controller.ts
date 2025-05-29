@@ -39,6 +39,6 @@ export class QueueController implements OnModuleInit {
             return;
         }
 
-        this.wsServer.getSystemChats(data);
+        this.wsServer.setSystemChats(data);
     }
 }
