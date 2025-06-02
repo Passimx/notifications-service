@@ -92,14 +92,10 @@ export class WsServer {
             rooms.push({ id: name, online: roundNumbers });
 
             if (onlineUsers > localMaxUsers) {
-                if (this.systemChats.has(name)) {
-                    this.sendMaxUsersToKafka(name, onlineUsers);
-                    await this.cacheService.updateMaxUsersOnline(name, onlineUsers);
-                    this.maxUsersOnline.set(name, onlineUsers);
-                } else {
-                    await this.cacheService.updateMaxUsersOnline(name, onlineUsers);
-                    this.maxUsersOnline.set(name, onlineUsers);
-                    this.sendMaxUsersToKafka(name, onlineUsers);
+                this.sendMaxUsersToKafka(name, onlineUsers);
+                await this.cacheService.updateMaxUsersOnline(name, onlineUsers);
+                this.maxUsersOnline.set(name, onlineUsers);
+                if (!this.systemChats.has(name)) {
                     this.to(name).emit(
                         EventsEnum.MAX_USERS_ONLINE,
                         new DataResponse<ChatMaxUsersOnline[]>([
