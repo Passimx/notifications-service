@@ -13,6 +13,7 @@ export class WsServer {
     public rooms: Map<string, Set<ClientSocket>> = new Map();
     public selectedClients: Set<ClientSocket> = new Set();
     private readonly maxUsersOnline: Map<string, number> = new Map();
+    public readonly systemChats = new Set<string>();
 
     constructor(
         private readonly queueService: QueueService,
@@ -24,6 +25,16 @@ export class WsServer {
         instance.rooms = rooms;
         instance.selectedClients = selectedClients;
         return instance;
+    }
+
+    public putSystemChat() {
+        this.queueService.sendMessage(TopicsEnum.PUT_SYSTEM_CHATS, new DataResponse(''));
+    }
+
+    public setSystemChats(chatId: string[]) {
+        chatId.forEach((chatId) => {
+            this.systemChats.add(chatId);
+        });
     }
 
     public leave(clientId: string, ...roomNames: string[]): boolean {
@@ -81,18 +92,20 @@ export class WsServer {
             rooms.push({ id: name, online: roundNumbers });
 
             if (onlineUsers > localMaxUsers) {
+                this.sendMaxUsersToKafka(name, onlineUsers);
                 await this.cacheService.updateMaxUsersOnline(name, onlineUsers);
                 this.maxUsersOnline.set(name, onlineUsers);
-                this.sendMaxUsersToKafka(name, onlineUsers);
-                this.to(name).emit(
-                    EventsEnum.MAX_USERS_ONLINE,
-                    new DataResponse<ChatMaxUsersOnline[]>([
-                        {
-                            id: name,
-                            maxUsersOnline: String(onlineUsers),
-                        },
-                    ]),
-                );
+                if (!this.systemChats.has(name)) {
+                    this.to(name).emit(
+                        EventsEnum.MAX_USERS_ONLINE,
+                        new DataResponse<ChatMaxUsersOnline[]>([
+                            {
+                                id: name,
+                                maxUsersOnline: String(onlineUsers),
+                            },
+                        ]),
+                    );
+                }
             }
         }
 
@@ -124,9 +137,11 @@ export class WsServer {
     }
 
     public online(room: chatOnline, clientId?: string): void {
-        this.to(room.id)
-            .except(clientId)
-            .emit(EventsEnum.CHAT_COUNT_ONLINE, new DataResponse<chatOnline[]>([room]));
+        if (!this.systemChats.has(room.id)) {
+            this.to(room.id)
+                .except(clientId)
+                .emit(EventsEnum.CHAT_COUNT_ONLINE, new DataResponse<chatOnline[]>([room]));
+        }
     }
 
     public to(roomName: string): WsServer {
