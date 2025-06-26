@@ -89,8 +89,6 @@ export class WsServer {
             const roundNumbers = this.getNumbersString(onlineUsers);
             const localMaxUsers = this.maxUsersOnline.get(name) || 0;
 
-            rooms.push({ id: name, online: roundNumbers });
-
             if (onlineUsers > localMaxUsers) {
                 this.sendMaxUsersToKafka(name, onlineUsers);
                 await this.cacheService.updateMaxUsersOnline(name, onlineUsers);
@@ -105,6 +103,7 @@ export class WsServer {
                             },
                         ]),
                     );
+                    rooms.push({ id: name, online: roundNumbers });
                 }
             }
         }
