@@ -39,7 +39,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     @SubscribeMessage(EventsEnum.PING)
     handPong(@ConnectedSocket() socket: ClientSocket): void {
-        this.wsServer.to(socket.id).emit(EventsEnum.PONG, new DataResponse('ok'));
+        this.wsServer.to(socket.id).emit(EventsEnum.PONG, new DataResponse('ok', true));
         socket.client.setPingTimeout(socket);
     }
 }

@@ -103,9 +103,9 @@ export class WsServer {
                             },
                         ]),
                     );
-                    rooms.push({ id: name, online: roundNumbers });
                 }
             }
+            if (!this.systemChats.has(name)) rooms.push({ id: name, online: roundNumbers });
         }
 
         // новый пользователь сразу получает актуальную информацию
