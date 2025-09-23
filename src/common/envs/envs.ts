@@ -24,6 +24,7 @@ export const Envs = {
         port: process.env.KAFKA_EXTERNAL_PORT,
         user: String(process.env.KAFKA_CLIENT_USERS),
         password: String(process.env.KAFKA_USER_PASSWORD),
+        groupId: String(process.env.APP_KAFKA_GROUP_ID_NOTIFICATION),
         kafkaIsConnect: BooleanUtils.strToBoolWithDefault(process.env.KAFKA_IS_CONNECT, false),
     },
 

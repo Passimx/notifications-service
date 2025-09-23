@@ -1,22 +1,21 @@
-import { FastifyRequest } from 'fastify';
 import { WsServer } from '../raw/socket-server';
 import { Envs } from '../../../common/envs/envs';
 
 export class CustomWebSocketClient {
-    public id!: string;
+    public id: string;
 
-    public headers!: { [key: string]: string };
+    public headers: { [key: string]: string };
 
-    public readonly rooms!: Set<string>;
+    public rooms: Set<string>;
 
     private pingTimeout: NodeJS.Timeout | null;
 
     constructor(
-        request: FastifyRequest,
+        request: any,
         private readonly wsServer?: WsServer,
     ) {
         this.rooms = new Set<string>();
-        this.id = request.headers['sec-websocket-key'] ?? 'unknown';
+        this.id = (request.headers['sec-websocket-key'] as string) ?? 'unknown';
         this.headers = request.headers as { [key: string]: string };
         this.pingTimeout = null;
     }
