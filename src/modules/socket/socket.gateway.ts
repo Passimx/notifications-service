@@ -5,7 +5,6 @@ import {
     SubscribeMessage,
     WebSocketGateway,
 } from '@nestjs/websockets';
-import { FastifyRequest } from 'fastify';
 import { Req } from '@nestjs/common';
 import { Envs } from '../../common/envs/envs';
 import { ApiController } from '../../common/decorators/api-controller.decorator';
@@ -17,7 +16,7 @@ import { EventsEnum } from './types/event.enum';
 @ApiController()
 @WebSocketGateway(Envs.main.socketIoPort, {
     cors: {
-        origin: ['https://tons-chat.ru', 'http://localhost:3006', 'https://passimx.ru'], // Разрешаем запросы только с этих доменов
+        origin: ['http://localhost:3006', 'https://passimx.ru'], // Разрешаем запросы только с этих доменов
         methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
         credentials: true, // Разрешаем использование кук и токенов
     },
@@ -25,7 +24,7 @@ import { EventsEnum } from './types/event.enum';
 export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     constructor(private readonly wsServer: WsServer) {}
 
-    handleConnection(@ConnectedSocket() socket: ClientSocket, @Req() request: FastifyRequest): void {
+    handleConnection(@ConnectedSocket() socket: ClientSocket, @Req() request: Request): void {
         socket.client = new CustomWebSocketClient(request, this.wsServer);
         socket.id = socket.client.id;
         this.wsServer.addConnection(socket);

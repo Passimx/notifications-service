@@ -1,8 +1,9 @@
-import { NestFastifyApplication } from '@nestjs/platform-fastify';
+import process from 'process';
 import { Transport } from '@nestjs/microservices';
+import { INestApplication } from '@nestjs/common';
 import { Envs } from '../../envs/envs';
 
-export async function useKafka(app: NestFastifyApplication) {
+export async function useKafka(app: INestApplication) {
     if (Envs.kafka.kafkaIsConnect) {
         app.connectMicroservice({
             name: 'CLIENT_KAFKA',
@@ -18,7 +19,7 @@ export async function useKafka(app: NestFastifyApplication) {
                     },
                 },
                 consumer: {
-                    groupId: 'tit-notification-service',
+                    groupId: String(process.env.KAFKA_GROUP_ID),
                 },
             },
         });
