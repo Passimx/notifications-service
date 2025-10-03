@@ -16,7 +16,7 @@ import { EventsEnum } from './types/event.enum';
 @ApiController()
 @WebSocketGateway(Envs.main.socketIoPort, {
     cors: {
-        origin: ['http://localhost:3006', 'https://passimx.ru'], // Разрешаем запросы только с этих доменов
+        origin: ['http://localhost:3006', 'http://localhost:4173', 'https://passimx.ru'], // Разрешаем запросы только с этих доменов
         methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
         credentials: true, // Разрешаем использование кук и токенов
     },
