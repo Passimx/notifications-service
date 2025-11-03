@@ -1,10 +1,10 @@
 import { writeFileSync } from 'fs';
-import { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { INestApplication } from '@nestjs/common';
 import projectInfo from '../../../../package.json';
 import { Envs } from '../../envs/envs';
 
-export function useSwagger(app: NestFastifyApplication): void {
+export function useSwagger(app: INestApplication): void {
     const documentBuilder = new DocumentBuilder();
 
     documentBuilder.addServer(Envs.swagger.url, Envs.swagger.description);

@@ -1,5 +1,4 @@
 import { NestFactory } from '@nestjs/core';
-import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { WsAdapter } from '@nestjs/platform-ws';
 import { version } from '../package.json';
 import { AppModule } from './modules/app.module';
@@ -10,7 +9,7 @@ import { useKafka } from './common/config/kafka/use-kafka';
 import { KafkaExceptionFilter } from './modules/exceptionFilters/RpcExceptionFilter';
 
 async function bootstrap() {
-    const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter(), {
+    const app = await NestFactory.create(AppModule, {
         bufferLogs: true,
     });
 
