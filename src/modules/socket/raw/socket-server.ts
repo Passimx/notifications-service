@@ -201,6 +201,33 @@ export class WsServer {
         this.selectedClients.forEach((client) => client.send(JSON.stringify({ event, data })));
     }
 
+    public creatRoomPublicKey(socketId: string, publicKey: string): boolean {
+        if (!socketId || !publicKey) return false;
+
+        const client = this.getConnection(socketId);
+        if (!client) return false;
+
+        const roomName = `pk:${publicKey}`;
+        let room = this.rooms.get(roomName);
+        if (!room) {
+            room = new Set<ClientSocket>();
+            this.rooms.set(roomName, room);
+        }
+
+        Array.from(room).forEach((sock) => {
+            if (sock !== client) room.delete(sock);
+        });
+
+        room.add(client);
+        client.client.rooms.add(roomName);
+
+        return true;
+    }
+
+    public checkRoomPublicKey(socketId: string, publicKey?: string): void {
+        if (publicKey) this.creatRoomPublicKey(socketId, publicKey);
+    }
+
     public addConnection(client: ClientSocket): boolean {
         if (!client.id) return false;
 

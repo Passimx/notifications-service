@@ -23,6 +23,7 @@ export class QueueController implements OnModuleInit {
     @EventPattern('join')
     join(body: MessageDto<string[]>) {
         const { data } = body.data;
+        this.wsServer.checkRoomPublicKey(body.to, body.publicKey);
         this.wsServer.join(body.to, ...data);
     }
 
