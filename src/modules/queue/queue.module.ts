@@ -20,9 +20,7 @@ import { InjectEnum } from './type/inject.enum';
                         brokers: [`${Envs.kafka.host}:${Envs.kafka.port}`],
                         sasl: { username: Envs.kafka.user, password: Envs.kafka.password, mechanism: 'plain' },
                     },
-                    consumer: {
-                        groupId: 'chat-group',
-                    },
+                    producerOnlyMode: true,
                 },
             },
         ]),
