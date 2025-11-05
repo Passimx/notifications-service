@@ -1,4 +1,3 @@
-import process from 'process';
 import { Transport } from '@nestjs/microservices';
 import { INestApplication } from '@nestjs/common';
 import { Envs } from '../../envs/envs';
@@ -19,7 +18,7 @@ export async function useKafka(app: INestApplication) {
                     },
                 },
                 consumer: {
-                    groupId: String(process.env.KAFKA_GROUP_ID),
+                    groupId: Envs.kafka.groupId,
                 },
             },
         });
