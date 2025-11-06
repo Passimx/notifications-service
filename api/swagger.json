@@ -71,6 +71,7 @@
 							"chat_count_online",
 							"pong",
 							"ping",
+							"verify",
 							"max_users_online"
 						]
 					},

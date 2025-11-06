@@ -3,11 +3,11 @@ import { WsServer } from '../raw/socket-server';
 import { Envs } from '../../../common/envs/envs';
 
 export class CustomWebSocketClient {
-    public id: string;
-
+    public id?: string;
     public headers: { [key: string]: string };
-
     public rooms: Set<string>;
+    public publicKeyString?: string;
+    public randomUUID?: string;
 
     private pingTimeout: NodeJS.Timeout | null;
 
@@ -17,16 +17,19 @@ export class CustomWebSocketClient {
     ) {
         this.rooms = new Set<string>();
         const headers = request.headers as { [key: string]: string };
-        const publicKeyHeader = headers['x-public-key'];
-        if (publicKeyHeader && typeof publicKeyHeader === 'string' && publicKeyHeader.trim().length > 0) {
-            const normalizedPublicKey = publicKeyHeader.trim();
 
-            this.id = createHmac('sha256', Envs.main.socketIdSecret).update(normalizedPublicKey).digest('hex');
-        } else {
-            this.id = headers['sec-websocket-key'] ?? 'unknown';
-        }
+        const queryString = request.url as string;
+
+        const paramsString = queryString.startsWith('/') ? queryString.substring(1) : queryString;
+
+        const searchParams = new URLSearchParams(paramsString);
+        const publicKeyString = searchParams.get('publicKey')?.trim();
+        if (!publicKeyString?.length) return;
+
+        this.id = createHmac('sha256', Envs.main.socketIdSecret).update(publicKeyString).digest('hex');
         this.headers = headers;
         this.pingTimeout = null;
+        this.publicKeyString = publicKeyString;
     }
 
     public join(roomName: string): void {

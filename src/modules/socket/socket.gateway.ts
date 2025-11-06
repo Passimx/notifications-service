@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import {
     ConnectedSocket,
     OnGatewayConnection,
@@ -6,9 +7,11 @@ import {
     WebSocketGateway,
 } from '@nestjs/websockets';
 import { Req } from '@nestjs/common';
+import { Payload } from '@nestjs/microservices';
 import { Envs } from '../../common/envs/envs';
 import { ApiController } from '../../common/decorators/api-controller.decorator';
 import { DataResponse } from '../queue/dto/data-response.dto';
+import { CryptoUtils } from '../../common/utils/crypto.utils';
 import { ClientSocket, CustomWebSocketClient } from './types/client-socket.type';
 import { WsServer } from './raw/socket-server';
 import { EventsEnum } from './types/event.enum';
@@ -24,11 +27,18 @@ import { EventsEnum } from './types/event.enum';
 export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     constructor(private readonly wsServer: WsServer) {}
 
-    handleConnection(@ConnectedSocket() socket: ClientSocket, @Req() request: Request): void {
+    async handleConnection(@ConnectedSocket() socket: ClientSocket, @Req() request: Request): Promise<void> {
         socket.client = new CustomWebSocketClient(request, this.wsServer);
-        socket.id = socket.client.id;
-        this.wsServer.addConnection(socket);
-        this.wsServer.to(socket.id).emit(EventsEnum.GET_SOCKET_ID, new DataResponse<string>(socket.id, true));
+        const publicKeyString = socket.client.publicKeyString;
+        if (publicKeyString) {
+            socket.id = socket.client.id;
+            socket.client.randomUUID = randomUUID();
+
+            const publicKey = await CryptoUtils.importRSAKey(publicKeyString, ['encrypt']);
+            const data = await CryptoUtils.encryptByRSAKey(publicKey, socket.client.randomUUID);
+
+            socket.send(JSON.stringify({ event: EventsEnum.VERIFY, data }));
+        }
     }
 
     handleDisconnect(@ConnectedSocket() socket: ClientSocket): void {
@@ -37,8 +47,15 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     @SubscribeMessage(EventsEnum.PING)
-    handPong(@ConnectedSocket() socket: ClientSocket): void {
+    pong(@ConnectedSocket() socket: ClientSocket): void {
         this.wsServer.to(socket.id).emit(EventsEnum.PONG, new DataResponse('ok', true));
         socket.client.setPingTimeout(socket);
+    }
+
+    @SubscribeMessage(EventsEnum.VERIFY)
+    verify(@ConnectedSocket() socket: ClientSocket, @Payload() payload): void {
+        if (socket.client.randomUUID !== payload) return;
+        this.wsServer.addConnection(socket);
+        this.wsServer.to(socket.id).emit(EventsEnum.GET_SOCKET_ID, new DataResponse<string>(socket.id, true));
     }
 }
