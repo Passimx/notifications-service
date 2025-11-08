@@ -1,4 +1,5 @@
 import process from 'process';
+import { randomUUID } from 'crypto';
 import { config } from 'dotenv';
 import { NumbersUtils } from '../utils/numbers.utils';
 import { BooleanUtils } from '../utils/boolean.utils';
@@ -6,11 +7,11 @@ import { BooleanUtils } from '../utils/boolean.utils';
 config();
 export const Envs = {
     main: {
-        host: process.env.APP_HOST_NOTIFICATION || '0.0.0.0',
-        appPort: NumbersUtils.toNumberOrDefault(process.env.APP_PORT_NOTIFICATION, 3000),
-        socketIoPort: NumbersUtils.toNumberOrDefault(process.env.SOCKET_PORT_NOTIFICATION, 3000),
+        host: '0.0.0.0',
+        appPort: NumbersUtils.toNumberOrDefault(process.env.NOTIFICATION_SERVICE_APP_PORT, 3000),
+        socketIoPort: NumbersUtils.toNumberOrDefault(process.env.NOTIFICATION_SERVICE_SOCKET_PORT_NOTIFICATIONT, 3000),
         pingTime: NumbersUtils.toNumberOrDefault(process.env.PING_TIME, 25000),
-        socketIdSecret: process.env.SOCKET_ID_SECRET,
+        socketIdSecret: process.env.NOTIFICATION_SERVICE_SOCKET_ID_SECRET || randomUUID(),
     },
 
     swagger: {
@@ -25,7 +26,7 @@ export const Envs = {
         port: process.env.KAFKA_EXTERNAL_PORT,
         user: String(process.env.KAFKA_CLIENT_USERS),
         password: String(process.env.KAFKA_USER_PASSWORD),
-        groupId: String(process.env.APP_KAFKA_GROUP_ID_NOTIFICATION),
+        groupId: String(process.env.NOTIFICATION_SERVICE_KAFKA_GROUP_ID),
         kafkaIsConnect: BooleanUtils.strToBoolWithDefault(process.env.KAFKA_IS_CONNECT, false),
     },
 
