@@ -21,7 +21,7 @@ import { EventsEnum } from './types/event.enum';
     cors: {
         origin: ['http://localhost:3006', 'http://localhost:4173', 'https://passimx.ru'], // Разрешаем запросы только с этих доменов
         methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
-        credentials: true, // Разрешаем использование кук и токенов
+        credentials: true,
     },
 })
 export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -48,7 +48,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     @SubscribeMessage(EventsEnum.PING)
     pong(@ConnectedSocket() socket: ClientSocket): void {
-        this.wsServer.to(socket.id).emit(EventsEnum.PONG, new DataResponse('ok', true));
+        socket.send(JSON.stringify({ event: EventsEnum.PONG }));
         socket.client.setPingTimeout(socket);
     }
 
