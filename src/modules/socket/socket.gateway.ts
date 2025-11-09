@@ -29,6 +29,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     async handleConnection(@ConnectedSocket() socket: ClientSocket, @Req() request: Request): Promise<void> {
         socket.client = new CustomWebSocketClient(request, this.wsServer);
+        socket.client.setPingTimeout(socket);
         const publicKeyString = socket.client.publicKeyString;
         if (publicKeyString) {
             socket.id = socket.client.id;
