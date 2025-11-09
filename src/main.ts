@@ -17,9 +17,9 @@ async function bootstrap() {
     if (Envs.kafka.kafkaIsConnect) await useKafka(app);
 
     app.enableCors({
-        origin: ['https://tons-chat.ru', 'http://localhost:3006'], // Разрешаем запросы только с этого домена
+        origin: true,
+        credentials: true,
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-        credentials: true, // Разрешаем использование кук и токенов
     });
 
     app.useWebSocketAdapter(new WsAdapter(app));
