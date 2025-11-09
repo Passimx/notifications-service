@@ -207,7 +207,6 @@ export class WsServer {
         const userRoom = new Set<ClientSocket>();
         userRoom.add(client);
         this.rooms.set(client.id, userRoom);
-        client.client.setPingTimeout(client);
         return true;
     }
 

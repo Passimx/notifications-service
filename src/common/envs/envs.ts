@@ -8,8 +8,8 @@ config();
 export const Envs = {
     main: {
         host: '0.0.0.0',
-        appPort: NumbersUtils.toNumberOrDefault(process.env.NOTIFICATION_SERVICE_APP_PORT, 3000),
-        socketIoPort: NumbersUtils.toNumberOrDefault(process.env.NOTIFICATION_SERVICE_SOCKET_PORT_NOTIFICATIONT, 3000),
+        appPort: NumbersUtils.toNumberOrDefault(process.env.NOTIFICATION_SERVICE_APP_PORT, 7021),
+        socketIoPort: NumbersUtils.toNumberOrDefault(process.env.NOTIFICATION_SERVICE_SOCKET_PORT_NOTIFICATIONT, 7022),
         pingTime: NumbersUtils.toNumberOrDefault(process.env.PING_TIME, 25000),
         socketIdSecret: process.env.NOTIFICATION_SERVICE_SOCKET_ID_SECRET || randomUUID(),
     },
@@ -26,12 +26,12 @@ export const Envs = {
         port: process.env.KAFKA_EXTERNAL_PORT,
         user: String(process.env.KAFKA_CLIENT_USERS),
         password: String(process.env.KAFKA_USER_PASSWORD),
-        groupId: String(process.env.NOTIFICATION_SERVICE_KAFKA_GROUP_ID),
-        kafkaIsConnect: BooleanUtils.strToBoolWithDefault(process.env.KAFKA_IS_CONNECT, false),
+        groupId: String(process.env.NOTIFICATION_SERVICE_KAFKA_GROUP_ID) || 'notifications-service',
+        kafkaIsConnect: BooleanUtils.strToBoolWithDefault(process.env.KAFKA_IS_CONNECT, true),
     },
 
     redis: {
-        host: process.env.REDIS_HOST,
-        port: Number(process.env.REDIS_PORT),
+        host: process.env.REDIS_HOST || 'redis',
+        port: Number(process.env.REDIS_PORT) || 6379,
     },
 };
