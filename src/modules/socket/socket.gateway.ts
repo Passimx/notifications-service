@@ -31,15 +31,15 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
         socket.client = new CustomWebSocketClient(request, this.wsServer);
         socket.client.setPingTimeout(socket);
         const publicKeyString = socket.client.publicKeyString;
-        if (publicKeyString) {
-            socket.id = socket.client.id;
-            socket.client.randomUUID = randomUUID();
+        if (!publicKeyString) socket.close();
 
-            const publicKey = await CryptoUtils.importRSAKey(publicKeyString, ['encrypt']);
-            const data = await CryptoUtils.encryptByRSAKey(publicKey, socket.client.randomUUID);
+        socket.id = socket.client.id;
+        socket.client.randomUUID = randomUUID();
 
-            socket.send(JSON.stringify({ event: EventsEnum.VERIFY, data }));
-        }
+        const publicKey = await CryptoUtils.importRSAKey(publicKeyString, ['encrypt']);
+        const data = await CryptoUtils.encryptByRSAKey(publicKey, socket.client.randomUUID);
+
+        socket.send(JSON.stringify({ event: EventsEnum.VERIFY, data }));
     }
 
     handleDisconnect(@ConnectedSocket() socket: ClientSocket): void {
