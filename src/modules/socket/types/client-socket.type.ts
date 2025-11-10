@@ -18,12 +18,15 @@ export class CustomWebSocketClient {
         this.rooms = new Set<string>();
         const headers = request.headers as { [key: string]: string };
 
+        const param = 'publicKey=';
         const queryString = request.url as string;
 
         const paramsString = queryString.startsWith('/') ? queryString.substring(1) : queryString;
+        const index = paramsString.indexOf(param);
+        if (index === -1) return;
 
-        const searchParams = new URLSearchParams(paramsString);
-        const publicKeyString = searchParams.get('publicKey')?.trim();
+        const params = new URLSearchParams(paramsString.slice(index));
+        const publicKeyString = params.get('publicKey');
         if (!publicKeyString?.length) return;
 
         this.id = createHmac('sha256', Envs.main.socketIdSecret).update(publicKeyString).digest('hex');
