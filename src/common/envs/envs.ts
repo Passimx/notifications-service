@@ -22,15 +22,15 @@ export const Envs = {
 
     kafka: {
         host: process.env.KAFKA_HOST || 'kafka',
-        port: process.env.KAFKA_EXTERNAL_PORT || 9094,
-        user: String(process.env.KAFKA_CLIENT_USERS || 'user'),
-        password: String(process.env.KAFKA_USER_PASSWORD || 'bitnami'),
-        groupId: String(process.env.NOTIFICATION_SERVICE_KAFKA_GROUP_ID || 'notifications-service'),
+        port: NumbersUtils.toNumberOrDefault(process.env.KAFKA_EXTERNAL_PORT, 9094),
+        user: process.env.KAFKA_CLIENT_USERS || 'user',
+        password: process.env.KAFKA_USER_PASSWORD || 'bitnami',
+        groupId: process.env.NOTIFICATION_SERVICE_KAFKA_GROUP_ID || 'notifications-service',
         kafkaIsConnect: BooleanUtils.strToBoolWithDefault(process.env.KAFKA_IS_CONNECT, true),
     },
 
     redis: {
         host: process.env.REDIS_HOST || 'redis',
-        port: Number(process.env.REDIS_PORT) || 6379,
+        port: NumbersUtils.toNumberOrDefault(process.env.REDIS_PORT, 6379),
     },
 };
