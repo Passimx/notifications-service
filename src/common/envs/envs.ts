@@ -21,10 +21,10 @@ export const Envs = {
     },
 
     kafka: {
-        host: process.env.KAFKA_HOST,
-        port: process.env.KAFKA_EXTERNAL_PORT,
-        user: String(process.env.KAFKA_CLIENT_USERS),
-        password: String(process.env.KAFKA_USER_PASSWORD),
+        host: process.env.KAFKA_HOST || 'kafka',
+        port: process.env.KAFKA_EXTERNAL_PORT || 9094,
+        user: String(process.env.KAFKA_CLIENT_USERS) || 'user',
+        password: String(process.env.KAFKA_USER_PASSWORD) || 'bitnami',
         groupId: String(process.env.NOTIFICATION_SERVICE_KAFKA_GROUP_ID) || 'notifications-service',
         kafkaIsConnect: BooleanUtils.strToBoolWithDefault(process.env.KAFKA_IS_CONNECT, true),
     },
