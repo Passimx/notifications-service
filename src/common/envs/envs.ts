@@ -1,5 +1,4 @@
 import process from 'process';
-import { randomUUID } from 'crypto';
 import { config } from 'dotenv';
 import { NumbersUtils } from '../utils/numbers.utils';
 import { BooleanUtils } from '../utils/boolean.utils';
@@ -11,7 +10,7 @@ export const Envs = {
         appPort: NumbersUtils.toNumberOrDefault(process.env.NOTIFICATION_SERVICE_APP_PORT, 7021),
         socketIoPort: NumbersUtils.toNumberOrDefault(process.env.NOTIFICATION_SERVICE_SOCKET_PORT_NOTIFICATIONT, 7022),
         pingTime: NumbersUtils.toNumberOrDefault(process.env.PING_TIME, 25000),
-        socketIdSecret: process.env.NOTIFICATION_SERVICE_SOCKET_ID_SECRET || randomUUID(),
+        socketIdSecret: process.env.NOTIFICATION_SERVICE_SOCKET_ID_SECRET || 'sha256',
     },
 
     swagger: {
