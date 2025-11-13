@@ -13,19 +13,46 @@ services:
     volumes:
       - ./data/data_redis:/data
 
-  redis-commander:
-    image: rediscommander/redis-commander:latest
-    container_name: redis-commander
-    environment:
-      - REDIS_HOSTS=local:redis:${REDIS_PORT}
-      - HTTP_USER=${REDIS_COMMANDER_USER}
-      - HTTP_PASSWORD=${REDIS_COMMANDER_PASSWORD}
-    ports:
-      - ${REDIS_COMMANDER_PORT}:${REDIS_COMMANDER_PORT}
+  kafka: # Если подключение будет с локальной машины - то поменять localhost:9094 -> kafka:9094
+    image: 'bitnami/kafka:latest'
+    container_name: passimx-kafka
+    restart: always
     networks:
       - main
-    depends_on:
-      - redis
+    env_file: .env
+    environment:
+      - KAFKA_ENABLE_KRAFT=yes
+      - KAFKA_BROKER_ID=1
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+      - KAFKA_CFG_LISTENERS=CLIENT://:${KAFKA_CLIENT_PORT},INTERNAL://:${KAFKA_INTERNAL_PORT},EXTERNAL://:${KAFKA_EXTERNAL_PORT},
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=INTERNAL:PLAINTEXT,CLIENT:SASL_PLAINTEXT,EXTERNAL:SASL_PLAINTEXT
+      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:${KAFKA_CLIENT_PORT},EXTERNAL://kafka:${KAFKA_EXTERNAL_PORT}
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=CLIENT
+      - KAFKA_CFG_SASL_MECHANISM_INTER_BROKER_PROTOCOL=PLAIN
+      - KAFKA_CFG_SASL_ENABLED_MECHANISMS=PLAIN
+      - KAFKA_CLIENT_USERS=${KAFKA_CLIENT_USERS}
+      - KAFKA_CLIENT_PASSWORDS=${KAFKA_USER_PASSWORD}
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=INTERNAL
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@127.0.0.1:9093
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    ports:
+      - ${KAFKA_CLIENT_PORT}:${KAFKA_CLIENT_PORT}
+      - ${KAFKA_EXTERNAL_PORT}:${KAFKA_EXTERNAL_PORT}
+    command:
+      - bash
+      - -c
+      - |
+        (
+          IFS="," read -ra TOPICS <<< "$$PRE_CREATE_TOPICS";
+          for T in "$${TOPICS[@]}"; do
+            /opt/bitnami/kafka/bin/kafka-topics.sh \
+              --bootstrap-server localhost:9094 \
+              --create --topic "$$T" --if-not-exists &&
+            echo "Created $$T" ||
+            echo "Failed to create $$T";
+          done;
+        ) & /opt/bitnami/scripts/kafka/run.sh
 
 networks:
   main:

@@ -10,7 +10,7 @@ export const Envs = {
         appPort: NumbersUtils.toNumberOrDefault(process.env.NOTIFICATION_SERVICE_APP_PORT, 7021),
         socketIoPort: NumbersUtils.toNumberOrDefault(process.env.NOTIFICATION_SERVICE_SOCKET_PORT_NOTIFICATIONT, 7022),
         pingTime: NumbersUtils.toNumberOrDefault(process.env.PING_TIME, 25000),
-        socketIdSecret: process.env.NOTIFICATION_SERVICE_SOCKET_ID_SECRET || 'sha256',
+        appSalt: process.env.APP_SALT || 'sha256',
     },
 
     swagger: {

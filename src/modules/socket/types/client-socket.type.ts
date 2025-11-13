@@ -1,6 +1,6 @@
-import { createHmac } from 'crypto';
 import { WsServer } from '../raw/socket-server';
 import { Envs } from '../../../common/envs/envs';
+import { CryptoUtils } from '../../../common/utils/crypto.utils';
 
 export class CustomWebSocketClient {
     public id?: string;
@@ -29,7 +29,7 @@ export class CustomWebSocketClient {
         const publicKeyString = params.get('publicKey');
         if (!publicKeyString?.length) return;
 
-        this.id = createHmac('sha256', Envs.main.socketIdSecret).update(publicKeyString).digest('hex');
+        this.id = CryptoUtils.getHash(publicKeyString);
         this.headers = headers;
         this.pingTimeout = null;
         this.publicKeyString = publicKeyString;
