@@ -1,4 +1,5 @@
-import { subtle } from 'crypto';
+import { createHmac, subtle } from 'crypto';
+import { Envs } from '../envs/envs';
 
 export class CryptoUtils {
     public static importRSAKey(
@@ -47,5 +48,9 @@ export class CryptoUtils {
         } catch (error) {
             return undefined;
         }
+    }
+
+    public static getHash(value: string): string {
+        return createHmac('sha256', Envs.main.appSalt).update(value).digest('hex');
     }
 }

@@ -52,7 +52,7 @@ export class WsServer {
             correctRoom.delete(client);
             if (!correctRoom.size) return this.rooms.delete(name);
 
-            const onlineUsers = this.rooms.get(name).size;
+            const onlineUsers = this.rooms.get(name)?.size;
             const roundNumbers = this.getNumbersString(onlineUsers);
 
             rooms.push({ id: name, online: roundNumbers });
@@ -85,7 +85,7 @@ export class WsServer {
             } else {
                 correctRoom.add(client);
             }
-            const onlineUsers = this.rooms.get(name).size;
+            const onlineUsers = this.rooms.get(name)?.size;
             const roundNumbers = this.getNumbersString(onlineUsers);
             const localMaxUsers = this.maxUsersOnline.get(name) || 0;
 
@@ -112,7 +112,10 @@ export class WsServer {
         this.to(clientId).emit(EventsEnum.CHAT_COUNT_ONLINE, new DataResponse<chatOnline[]>(rooms));
 
         rooms.forEach(({ id, online }) => {
-            const onlineBefore = this.getNumbersString(this.rooms.get(id).size - 1);
+            const room = this.rooms.get(id);
+            if (!room) return;
+
+            const onlineBefore = this.getNumbersString(room.size - 1);
             if (online !== onlineBefore) this.online({ id, online }, clientId);
         });
 
