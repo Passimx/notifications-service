@@ -72,7 +72,11 @@
 							"pong",
 							"ping",
 							"verify",
-							"max_users_online"
+							"max_users_online",
+							"video_call_started",
+							"video_call_joined",
+							"video_call_left",
+							"video_call_ended"
 						]
 					},
 					"data": {

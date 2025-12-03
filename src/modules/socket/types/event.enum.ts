@@ -8,4 +8,8 @@ export enum EventsEnum {
     PING = 'ping',
     VERIFY = 'verify',
     MAX_USERS_ONLINE = 'max_users_online',
+    VIDEO_CALL_STARTED = 'video_call_started',
+    VIDEO_CALL_JOINED = 'video_call_joined',
+    VIDEO_CALL_LEFT = 'video_call_left',
+    VIDEO_CALL_ENDED = 'video_call_ended',
 }
