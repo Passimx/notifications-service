@@ -24,7 +24,6 @@ const changeRooms = (value: Map<string, Set<ClientSocket>>) => {
         const clients = Array.from(set).map((client) => client.id);
         return { key, clients };
     });
-
     rooms = JSON.stringify(resultArr);
 };
 
