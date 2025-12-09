@@ -16,6 +16,18 @@ import { ClientSocket, CustomWebSocketClient } from './types/client-socket.type'
 import { WsServer } from './raw/socket-server';
 import { EventsEnum } from './types/event.enum';
 
+export let rooms: string;
+
+const changeRooms = (value: Map<string, Set<ClientSocket>>) => {
+    const resultArr = Array.from(value.keys()).map((key) => {
+        const set = value.get(key);
+        const clients = Array.from(set).map((client) => client.id);
+        return { key, clients };
+    });
+
+    rooms = JSON.stringify(resultArr);
+};
+
 @ApiController()
 @WebSocketGateway(Envs.main.socketIoPort, {
     cors: {
@@ -40,11 +52,13 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
         const data = await CryptoUtils.encryptByRSAKey(publicKey, socket.client.randomUUID);
 
         socket.send(JSON.stringify({ event: EventsEnum.VERIFY, data }));
+        changeRooms(this.wsServer.rooms);
     }
 
     handleDisconnect(@ConnectedSocket() socket: ClientSocket): void {
         this.wsServer.deleteConnection(socket);
         socket.close();
+        changeRooms(this.wsServer.rooms);
     }
 
     @SubscribeMessage(EventsEnum.PING)
@@ -58,5 +72,6 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
         if (socket.client.randomUUID !== payload) return;
         this.wsServer.addConnection(socket);
         this.wsServer.to(socket.id).emit(EventsEnum.GET_SOCKET_ID, new DataResponse<string>(socket.id, true));
+        changeRooms(this.wsServer.rooms);
     }
 }

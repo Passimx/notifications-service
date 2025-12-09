@@ -26,6 +26,20 @@
 					"Queue"
 				]
 			}
+		},
+		"/rooms": {
+			"get": {
+				"operationId": "HttpController_getRooms",
+				"parameters": [],
+				"responses": {
+					"200": {
+						"description": ""
+					}
+				},
+				"tags": [
+					"Http"
+				]
+			}
 		}
 	},
 	"info": {
