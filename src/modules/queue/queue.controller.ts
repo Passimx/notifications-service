@@ -1,44 +1,45 @@
-import { Controller, Inject, OnModuleInit, UseFilters } from '@nestjs/common';
+import { Controller, Inject, UseFilters } from '@nestjs/common';
 import { EventPattern } from '@nestjs/microservices';
+import { KafkaExceptionFilter } from '../exceptionFilters/RpcExceptionFilter';
 import { WsServer } from '../socket/raw/socket-server';
 import { ApiMessageResponseDecorator } from '../../common/decorators/api-message-response.decorator';
-import { KafkaExceptionFilter } from '../exceptionFilters/RpcExceptionFilter';
 import { MessageDto } from './dto/message.dto';
 
 @Controller()
 @UseFilters(KafkaExceptionFilter)
-export class QueueController implements OnModuleInit {
+export class QueueController {
     constructor(@Inject(WsServer) private readonly wsServer: WsServer) {}
-
-    onModuleInit() {
-        this.wsServer.putSystemChat();
+    @EventPattern('emit_to_chat')
+    @ApiMessageResponseDecorator()
+    emitToChat(body: MessageDto) {
+        this.wsServer.toChat(body.to).emit(body.event, body.data);
     }
 
-    @EventPattern('emit')
+    @EventPattern('emit_to_user_room')
     @ApiMessageResponseDecorator()
-    emit(body: MessageDto) {
-        this.wsServer.to(body.to).emit(body.event, body.data);
+    emitToUserRoom(body: MessageDto) {
+        this.wsServer.toUserRoom(body.to).emit(body.event, body.data);
     }
 
     @EventPattern('join')
-    join(body: MessageDto<string[]>) {
+    joinChat(body: MessageDto<string[]>) {
         const { data } = body.data;
-        this.wsServer.join(body.to, ...data);
+        this.wsServer.joinChat(body.to, ...data);
     }
 
     @EventPattern('leave')
-    leave(body: MessageDto<string[]>) {
+    leaveChat(body: MessageDto<string[]>) {
         const { data } = body.data;
-        this.wsServer.leave(body.to, ...data);
+        this.wsServer.leaveChat(body.to, ...data);
     }
 
-    @EventPattern('system_chats')
-    getSystemChats(body: MessageDto<string[]>) {
-        const { data } = body.data;
-        if (typeof data === 'string') {
-            return;
-        }
-
-        this.wsServer.setSystemChats(data);
-    }
+    // @EventPattern('system_chats')
+    // getSystemChats(body: MessageDto<string[]>) {
+    //     const { data } = body.data;
+    //     if (typeof data === 'string') {
+    //         return;
+    //     }
+    //
+    //     this.wsServer.setSystemChats(data);
+    // }
 }

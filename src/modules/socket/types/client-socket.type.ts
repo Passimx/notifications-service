@@ -1,11 +1,13 @@
+import { randomUUID } from 'crypto';
 import { WsServer } from '../raw/socket-server';
 import { Envs } from '../../../common/envs/envs';
 import { CryptoUtils } from '../../../common/utils/crypto.utils';
+import { EventsEnum } from './event.enum';
 
 export class CustomWebSocketClient {
     public id?: string;
+    public userId: string;
     public headers: { [key: string]: string };
-    public rooms: Set<string>;
     public publicKeyString?: string;
     public randomUUID?: string;
 
@@ -15,7 +17,6 @@ export class CustomWebSocketClient {
         request: any,
         private readonly wsServer?: WsServer,
     ) {
-        this.rooms = new Set<string>();
         const headers = request.headers as { [key: string]: string };
 
         const param = 'publicKey=';
@@ -29,29 +30,22 @@ export class CustomWebSocketClient {
         const publicKeyString = params.get('publicKey');
         if (!publicKeyString?.length) return;
 
-        this.id = CryptoUtils.getHash(publicKeyString);
+        this.id = this.setSocketId();
+        this.userId = CryptoUtils.getHash(publicKeyString);
         this.headers = headers;
         this.pingTimeout = null;
         this.publicKeyString = publicKeyString;
     }
 
-    public join(roomName: string): void {
-        this.wsServer.join(this.id, roomName);
-    }
-
-    public leave(roomName: string): void {
-        this.wsServer.leave(this.id, roomName);
-    }
-
-    public leaveAll(): void {
-        this.rooms.forEach((roomName) => this.leave(roomName));
+    public emit(event: EventsEnum, data?: unknown) {
+        this.wsServer.toConnection(this.id).emit(event, data);
     }
 
     public setPingTimeout(socket: ClientSocket): void {
         this.clearPingTimeout();
         this.pingTimeout = setTimeout(() => {
             socket.close();
-            this.wsServer.deleteConnection(socket);
+            this.wsServer.leaveConnection(socket);
         }, Envs.main.pingTime);
     }
 
@@ -60,6 +54,13 @@ export class CustomWebSocketClient {
             clearTimeout(this.pingTimeout);
             this.pingTimeout = null;
         }
+    }
+
+    private setSocketId(): string {
+        const socketId = randomUUID();
+        if (this.wsServer.connections.get(socketId)) return this.setSocketId();
+
+        return socketId;
     }
 }
 

@@ -4,7 +4,7 @@
 		"/message": {
 			"get": {
 				"description": "Событие message",
-				"operationId": "QueueController_emit",
+				"operationId": "QueueController_emitToUserRoom",
 				"parameters": [],
 				"responses": {
 					"200": {
@@ -45,7 +45,7 @@
 	"info": {
 		"title": "notifications-service",
 		"description": "",
-		"version": "0.0.1",
+		"version": "1.0.1",
 		"contact": {}
 	},
 	"tags": [],
