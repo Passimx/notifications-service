@@ -10,6 +10,7 @@ export class CustomWebSocketClient {
     public headers: { [key: string]: string };
     public publicKeyString?: string;
     public randomUUID?: string;
+    public chatNames: Set<string>;
 
     private pingTimeout: NodeJS.Timeout | null;
 
@@ -35,6 +36,7 @@ export class CustomWebSocketClient {
         this.headers = headers;
         this.pingTimeout = null;
         this.publicKeyString = publicKeyString;
+        this.chatNames = new Set<string>();
     }
 
     public emit(event: EventsEnum, data?: unknown) {

@@ -45,7 +45,7 @@
 	"info": {
 		"title": "notifications-service",
 		"description": "",
-		"version": "1.0.1",
+		"version": "1.1.0",
 		"contact": {}
 	},
 	"tags": [],
@@ -79,14 +79,8 @@
 						"type": "string",
 						"enum": [
 							"get_socket_id",
-							"create_chat",
-							"create_message",
-							"join_chat",
-							"chat_count_online",
 							"pong",
-							"ping",
-							"verify",
-							"max_users_online"
+							"verify"
 						]
 					},
 					"data": {

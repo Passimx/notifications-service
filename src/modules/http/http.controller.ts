@@ -6,8 +6,7 @@ export class HttpController {
     @Get('rooms')
     getRooms() {
         const connections = Array.from(rooms.connections.keys()).map((key) => {
-            const connection = rooms.connections.get(key)?.id;
-            return { key, connection };
+            return { key };
         });
 
         const userRooms = Array.from(rooms.userRooms.keys()).map((key) => {
@@ -19,9 +18,10 @@ export class HttpController {
 
         const chats = Array.from(rooms.chats.keys()).map((key) => {
             const set = rooms.chats.get(key);
-            const userRooms = Array.from(set ?? new Set<string>());
+            const userRooms = Array.from(set?.userRooms ?? new Set<string>());
+            const connections = Array.from(set?.connections ?? new Set<string>());
 
-            return { key, userRooms };
+            return { key, userRooms, connections };
         });
 
         return { connections, userRooms, chats };

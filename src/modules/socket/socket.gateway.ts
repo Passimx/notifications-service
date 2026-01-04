@@ -15,6 +15,7 @@ import { DataResponse } from '../queue/dto/data-response.dto';
 import { ClientSocket, CustomWebSocketClient } from './types/client-socket.type';
 import { WsServer } from './raw/socket-server';
 import { EventsEnum } from './types/event.enum';
+import { TopicsEnum } from './types/topics.enum';
 
 export let rooms: WsServer;
 
@@ -56,13 +57,13 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
         changeRooms(this.wsServer);
     }
 
-    @SubscribeMessage(EventsEnum.PING)
+    @SubscribeMessage(TopicsEnum.PING)
     pong(@ConnectedSocket() socket: ClientSocket): void {
         socket.client.emit(EventsEnum.PONG);
         socket.client.setPingTimeout(socket);
     }
 
-    @SubscribeMessage(EventsEnum.VERIFY)
+    @SubscribeMessage(TopicsEnum.VERIFY)
     verify(@ConnectedSocket() socket: ClientSocket, @Payload() payload): void {
         if (socket.client.randomUUID !== payload) return;
         this.wsServer.joinUserRoom(socket);

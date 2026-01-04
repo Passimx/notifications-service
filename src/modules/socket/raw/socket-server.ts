@@ -1,13 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { ClientSocket } from '../types/client-socket.type';
 import { EventsEnum } from '../types/event.enum';
+import { ChatRoomType } from '../types/chat-room.type';
 
 @Injectable()
 export class WsServer {
-    public connections: Map<string, ClientSocket> = new Map();
-    public userRooms: Map<string, Set<string>> = new Map();
-    public chats: Map<string, Set<string>> = new Map();
+    public connections: Map<string, ClientSocket> = new Map(); // connectionId -> connection[]
+    public userRooms: Map<string, Set<string>> = new Map(); // userId -> connectionId[]
+    public chats: Map<string, ChatRoomType> = new Map();
     public selectedClients: Set<ClientSocket> = new Set();
+
+    private getNewChatRoom(): ChatRoomType {
+        return {
+            userRooms: new Set<string>(),
+            connections: new Set<string>(),
+        } as ChatRoomType;
+    }
 
     public joinConnection(socket: ClientSocket) {
         const connectionName = socket.id;
@@ -22,17 +30,46 @@ export class WsServer {
         this.userRooms.set(userRoomName, userRoom);
     }
 
-    public joinChat(userRoomName: string, ...chatNames: string[]): boolean {
+    public joinUserToChat(userRoomName: string, ...chatNames: string[]): boolean {
         const userRoom = this.userRooms.get(userRoomName);
         if (!userRoom) return false;
 
         for (const chatName of chatNames) {
-            const chat = this.chats.get(chatName) ?? new Set<string>();
-            chat.add(userRoomName);
+            const chat = this.chats.get(chatName) ?? this.getNewChatRoom();
+            chat.userRooms.add(userRoomName);
+
+            const userRoom = this.userRooms.get(userRoomName);
+            userRoom?.forEach((getConnectionName) => {
+                chat.connections?.delete(getConnectionName);
+            });
+
             this.chats.set(chatName, chat);
         }
 
         return true;
+    }
+
+    public joinConnectionToChat(connectionName: string, ...chatNames: string[]) {
+        const connection = this.connections.get(connectionName);
+        if (!connection) return;
+        chatNames?.forEach((chatName) => {
+            const chat = this.chats.get(chatName) ?? this.getNewChatRoom();
+            chat.connections.add(connectionName);
+            this.chats.set(chatName, chat);
+            connection.client.chatNames.add(chatName);
+        });
+    }
+
+    public leaveConnectionFromChat(connectionName: string, ...chatNames: string[]) {
+        const connection = this.connections.get(connectionName);
+
+        chatNames.forEach((chatName) => {
+            connection?.client.chatNames.delete(chatName);
+            const chat = this.chats.get(chatName);
+            if (!chat) return;
+            chat.connections.delete(connectionName);
+            this.chats.set(chatName, chat);
+        });
     }
 
     public leaveConnection(client: ClientSocket) {
@@ -45,9 +82,16 @@ export class WsServer {
         const userRoom = this.userRooms.get(userRoomName);
         userRoom.delete(connectionName);
         this.userRooms.set(userRoomName, userRoom);
+
+        client.client.chatNames.forEach((chatName) => {
+            const chat = this.chats.get(chatName);
+            if (!chat) return;
+            chat.connections.delete(connectionName);
+            this.chats.set(chatName, chat);
+        });
     }
 
-    public leaveChat(userRoomName: string, ...chatNames: string[]): boolean {
+    public leaveUserFromChat(userRoomName: string, ...chatNames: string[]): boolean {
         const userRoom = this.userRooms.get(userRoomName);
         if (!userRoom) return false;
 
@@ -55,8 +99,8 @@ export class WsServer {
             let chat = this.chats.get(chatName);
             if (!chat) continue;
 
-            chat.delete(userRoomName);
-            if (chat.size) chat = undefined;
+            chat.userRooms.delete(userRoomName);
+            if (!chat?.userRooms.size && !chat?.connections?.size) chat = undefined;
 
             this.chats.set(chatName, chat);
         }
@@ -73,7 +117,7 @@ export class WsServer {
         const selectedClients = new Set<ClientSocket>(this.selectedClients);
         const connections = new Map<string, ClientSocket>(this.connections);
         const userRooms = new Map<string, Set<string>>(this.userRooms);
-        const chats = new Map<string, Set<string>>(this.chats);
+        const chats = new Map<string, ChatRoomType>(this.chats);
 
         const connection = this.connections.get(connectionName);
         selectedClients.add(connection);
@@ -85,7 +129,7 @@ export class WsServer {
         const selectedClients = new Set<ClientSocket>(this.selectedClients);
         const connections = new Map<string, ClientSocket>(this.connections);
         const userRooms = new Map<string, Set<string>>(this.userRooms);
-        const chats = new Map<string, Set<string>>(this.chats);
+        const chats = new Map<string, ChatRoomType>(this.chats);
 
         const userRoom = this.userRooms.get(userRoomName);
         userRoom?.forEach((connectionName) => {
@@ -100,15 +144,20 @@ export class WsServer {
         const selectedClients = new Set<ClientSocket>(this.selectedClients);
         const connections = new Map<string, ClientSocket>(this.connections);
         const userRooms = new Map<string, Set<string>>(this.userRooms);
-        const chats = new Map<string, Set<string>>(this.chats);
+        const chats = new Map<string, ChatRoomType>(this.chats);
 
         const chat = this.chats.get(chatName);
-        chat?.forEach((userRoomName) => {
+
+        chat?.userRooms.forEach((userRoomName) => {
             const userRoom = this.userRooms.get(userRoomName);
             userRoom?.forEach((connectionName) => {
                 const connection = this.connections.get(connectionName);
                 selectedClients.add(connection);
             });
+        });
+        chat?.connections?.forEach((connectionName) => {
+            const connection = this.connections.get(connectionName);
+            if (connection) selectedClients.add(connection);
         });
 
         return this.createNewInstance(connections, userRooms, chats, selectedClients);
@@ -117,7 +166,7 @@ export class WsServer {
     private createNewInstance(
         connections: Map<string, ClientSocket>,
         userRooms: Map<string, Set<string>>,
-        chats: Map<string, Set<string>>,
+        chats: Map<string, ChatRoomType>,
         selectedClients: Set<ClientSocket>,
     ): WsServer {
         const instance = new WsServer();
