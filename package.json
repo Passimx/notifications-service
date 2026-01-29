@@ -1,6 +1,6 @@
 {
   "name": "notifications-service",
-  "version": "1.1.2",
+  "version": "2.0.0",
   "description": "Notification service",
   "author": "Ramzini22",
   "private": true,
