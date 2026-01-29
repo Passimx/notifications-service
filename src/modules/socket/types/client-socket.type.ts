@@ -1,26 +1,26 @@
-import { randomUUID } from 'crypto';
+import { JwtService } from '@nestjs/jwt';
 import { WsServer } from '../raw/socket-server';
 import { Envs } from '../../../common/envs/envs';
 import { CryptoUtils } from '../../../common/utils/crypto.utils';
+import { logger } from '../../../common/logger/logger';
 import { EventsEnum } from './event.enum';
+import { TokenPayload } from './token-payload.type';
 
 export class CustomWebSocketClient {
     public id?: string;
-    public userId: string;
-    public headers: { [key: string]: string };
-    public publicKeyString?: string;
-    public randomUUID?: string;
+    public userId?: string;
+    public sessionId?: string;
     public chatNames: Set<string>;
 
     private pingTimeout: NodeJS.Timeout | null;
 
-    constructor(
-        request: any,
-        private readonly wsServer?: WsServer,
-    ) {
-        const headers = request.headers as { [key: string]: string };
+    constructor(private readonly wsServer?: WsServer) {
+        this.chatNames = new Set<string>();
+        this.pingTimeout = null;
+    }
 
-        const param = 'publicKey=';
+    public async addToken(request: any, jwtService: JwtService) {
+        const param = 'token=';
         const queryString = request.url as string;
 
         const paramsString = queryString.startsWith('/') ? queryString.substring(1) : queryString;
@@ -28,15 +28,17 @@ export class CustomWebSocketClient {
         if (index === -1) return;
 
         const params = new URLSearchParams(paramsString.slice(index));
-        const publicKeyString = params.get('publicKey');
-        if (!publicKeyString?.length) return;
+        const token = params.get('token');
 
-        this.id = this.setSocketId();
-        this.userId = CryptoUtils.getHash(publicKeyString);
-        this.headers = headers;
-        this.pingTimeout = null;
-        this.publicKeyString = publicKeyString;
-        this.chatNames = new Set<string>();
+        try {
+            const payload = await jwtService.verifyAsync<TokenPayload>(token);
+            this.userId = CryptoUtils.getHash(payload.rsaPublicKey);
+            this.sessionId = payload.sessionId;
+            this.id = `${payload.sessionId}${this.userId}`;
+        } catch (e) {
+            logger.error(e);
+            return;
+        }
     }
 
     public emit(event: EventsEnum, data?: unknown) {
@@ -57,18 +59,10 @@ export class CustomWebSocketClient {
             this.pingTimeout = null;
         }
     }
-
-    private setSocketId(): string {
-        const socketId = randomUUID();
-        if (this.wsServer.connections.get(socketId)) return this.setSocketId();
-
-        return socketId;
-    }
 }
 
 export class CustomWebSocketClass {
     public id!: string;
-
     public client!: CustomWebSocketClient;
 }
 

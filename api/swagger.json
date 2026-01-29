@@ -45,7 +45,7 @@
 	"info": {
 		"title": "notifications-service",
 		"description": "",
-		"version": "1.1.1",
+		"version": "1.1.2",
 		"contact": {}
 	},
 	"tags": [],
@@ -80,7 +80,11 @@
 						"enum": [
 							"get_socket_id",
 							"pong",
-							"verify"
+							"logout",
+							"video_call_started",
+							"video_call_joined",
+							"video_call_left",
+							"video_call_ended"
 						]
 					},
 					"data": {

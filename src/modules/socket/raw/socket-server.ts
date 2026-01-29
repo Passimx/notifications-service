@@ -23,11 +23,20 @@ export class WsServer {
     }
 
     public joinUserRoom(socket: ClientSocket) {
-        const connectionName = socket.id;
-        const userRoomName = socket.client.userId;
+        const connectionName = socket?.id;
+        const userRoomName = socket?.client?.userId;
         const userRoom = this.userRooms.get(userRoomName) ?? new Set<string>();
         userRoom.add(connectionName);
         this.userRooms.set(userRoomName, userRoom);
+    }
+
+    public leaveUserRoom(socket: ClientSocket) {
+        const connectionName = socket.id;
+        const userRoomName = socket.client.userId;
+        const userRoom = this.userRooms.get(userRoomName) ?? new Set<string>();
+        userRoom.delete(connectionName);
+        this.userRooms.set(userRoomName, userRoom);
+        this.toConnection(connectionName).emit(EventsEnum.LOGOUT, {});
     }
 
     public joinUserToChat(userRoomName: string, ...chatNames: string[]): boolean {
@@ -80,10 +89,10 @@ export class WsServer {
 
         const userRoomName = client.client.userId;
         const userRoom = this.userRooms.get(userRoomName);
-        userRoom.delete(connectionName);
+        userRoom?.delete(connectionName);
         this.userRooms.set(userRoomName, userRoom);
 
-        client.client.chatNames.forEach((chatName) => {
+        client.client.chatNames?.forEach((chatName) => {
             const chat = this.chats.get(chatName);
             if (!chat) return;
             chat.connections.delete(connectionName);
@@ -132,6 +141,7 @@ export class WsServer {
         const chats = new Map<string, ChatRoomType>(this.chats);
 
         const userRoom = this.userRooms.get(userRoomName);
+
         userRoom?.forEach((connectionName) => {
             const connection = this.connections.get(connectionName);
             selectedClients.add(connection);

@@ -2,11 +2,13 @@ export enum TopicsEnum {
     EMIT_TO_CHAT = 'emit_to_chat',
     EMIT_TO_USER_ROOM = 'emit_to_user_room',
 
-    VERIFY = 'verify',
     PING = 'ping',
 
-    JOIN_CONNECTION_TO_CHAT = 'join_connection_to_chat',
     JOIN_USER_TO_CHAT = 'join_user_to_chat',
-    LEAVE_CONNECTION_FROM_CHAT = 'leave_connection_to_chat',
+    JOIN_CONNECTION_TO_CHAT = 'join_connection_to_chat',
+    JOIN_CONNECTION_TO_USER_ROOM = 'join_connection_to_user_room',
+
     LEAVE_USER_FROM_CHAT = 'leave_user_to_chat',
+    LEAVE_CONNECTION_FROM_CHAT = 'leave_connection_to_chat',
+    LEAVE_CONNECTION_FROM_USER_ROOM = 'leave_connection_from_user_room',
 }
