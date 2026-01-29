@@ -1,5 +1,5 @@
 export enum EventsEnum {
     GET_SOCKET_ID = 'get_socket_id',
     PONG = 'pong',
-    VERIFY = 'verify',
+    LOGOUT = 'logout',
 }

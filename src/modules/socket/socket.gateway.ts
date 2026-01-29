@@ -1,4 +1,3 @@
-import { randomUUID } from 'crypto';
 import {
     ConnectedSocket,
     OnGatewayConnection,
@@ -7,11 +6,13 @@ import {
     WebSocketGateway,
 } from '@nestjs/websockets';
 import { Req } from '@nestjs/common';
-import { Payload } from '@nestjs/microservices';
+import { JwtService } from '@nestjs/jwt';
 import { Envs } from '../../common/envs/envs';
 import { ApiController } from '../../common/decorators/api-controller.decorator';
-import { CryptoUtils } from '../../common/utils/crypto.utils';
 import { DataResponse } from '../queue/dto/data-response.dto';
+import { QueueService } from '../queue/queue.service';
+import { SendTopicsEnum } from '../queue/type/send-topics.enum';
+import { SendOnlineDto } from '../queue/dto/send-online.dto';
 import { ClientSocket, CustomWebSocketClient } from './types/client-socket.type';
 import { WsServer } from './raw/socket-server';
 import { EventsEnum } from './types/event.enum';
@@ -32,22 +33,26 @@ const changeRooms = (value: WsServer) => {
     },
 })
 export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
-    constructor(private readonly wsServer: WsServer) {}
+    constructor(
+        private readonly wsServer: WsServer,
+        private readonly jwtService: JwtService,
+        private readonly queueService: QueueService,
+    ) {}
 
     async handleConnection(@ConnectedSocket() socket: ClientSocket, @Req() request: Request): Promise<void> {
-        socket.client = new CustomWebSocketClient(request, this.wsServer);
+        socket.client = new CustomWebSocketClient(this.wsServer);
+
+        await socket.client.addToken(request, this.jwtService);
         socket.id = socket.client.id;
-        socket.client.setPingTimeout(socket);
-        const publicKeyString = socket.client.publicKeyString;
-        if (!publicKeyString) socket.close();
+        if (!socket.client.sessionId) return socket.close();
 
-        socket.client.randomUUID = randomUUID();
+        const connection = this.wsServer.connections.get(socket.client.id);
+        if (connection) connection.close();
 
-        const publicKey = await CryptoUtils.importRSAKey(publicKeyString, ['encrypt']);
-        const data = await CryptoUtils.encryptByRSAKey(publicKey, socket.client.randomUUID);
         this.wsServer.joinConnection(socket);
+        socket.client.emit(EventsEnum.GET_SOCKET_ID, new DataResponse<string>(socket.id, true));
+        socket.client.setPingTimeout(socket);
 
-        socket.client.emit(EventsEnum.VERIFY, data);
         changeRooms(this.wsServer);
     }
 
@@ -55,19 +60,18 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.wsServer.leaveConnection(socket);
         socket.close();
         changeRooms(this.wsServer);
+        this.queueService.sendMessage(
+            SendTopicsEnum.OFFLINE,
+            new SendOnlineDto({
+                userId: socket.client.userId,
+                sessionId: socket.client.sessionId,
+            }),
+        );
     }
 
     @SubscribeMessage(TopicsEnum.PING)
     pong(@ConnectedSocket() socket: ClientSocket): void {
         socket.client.emit(EventsEnum.PONG);
         socket.client.setPingTimeout(socket);
-    }
-
-    @SubscribeMessage(TopicsEnum.VERIFY)
-    verify(@ConnectedSocket() socket: ClientSocket, @Payload() payload): void {
-        if (socket.client.randomUUID !== payload) return;
-        this.wsServer.joinUserRoom(socket);
-        socket.client.emit(EventsEnum.GET_SOCKET_ID, new DataResponse<string>(socket.id, true));
-        changeRooms(this.wsServer);
     }
 }

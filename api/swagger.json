@@ -80,7 +80,7 @@
 						"enum": [
 							"get_socket_id",
 							"pong",
-							"verify"
+							"logout"
 						]
 					},
 					"data": {
